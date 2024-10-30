@@ -1,118 +1,109 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import * as React from 'react';
+import { useEffect, useState } from 'react';
+import { NavigationContainer, DrawerActions } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, TouchableOpacity, Text } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons'; // Import Icon
+import api from './src/api';
+import HomeScreen from './src/screens/HomeScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import TodaySales from './src/screens/TodaySales';
+import SaleDetails from './src/screens/SaleDetails';
+import ProfileScreen from './src/screens/ProfileScreen';
+import BlueScreen from './src/screens/BlueScreen';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator();
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+function HomeStack() {
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="TodaySales" component={TodaySales} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Blue" component={BlueScreen} />
+      <Stack.Screen name="SaleDetails" component={SaleDetails} initialParams={{ vocNo: '1' }} />
+    </Stack.Navigator>
   );
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+// Custom Drawer Content
+function CustomDrawerContent(props) {
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('token');
+    props.navigation.dispatch(DrawerActions.closeDrawer());
+    props.navigation.navigate('Login');
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
+    <DrawerContentScrollView {...props} contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={{ flex: 1 }}>
+        <DrawerItem label="Home" onPress={() => props.navigation.navigate('HomeStack')} />
+        <DrawerItem label="Today Sales" onPress={() => props.navigation.navigate('TodaySales')} />
+      </View>
+
+      {/* Logout Button */}
+      <View style={{ padding: 10, borderTopWidth: 1, borderColor: '#ccc' }}>
+        <TouchableOpacity
           style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: 'orange',
+            padding: 10,
+            borderRadius: 5,
+            justifyContent: 'center',
+          }}
+          onPress={handleLogout}
+        >
+          <Icon name="log-out-outline" size={20} color="white" style={{ marginRight: 10 }} />
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+    </DrawerContentScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+function App() {
+  const [initialRoute, setInitialRoute] = useState(null);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await api.get('https://api.cloudpkerp.com:8081/api/product');
+          if (response.status === 200) {
+            setInitialRoute('HomeStack');
+          }
+        } catch (error) {
+          if (error.response && error.response.status === 401) {
+            setInitialRoute('Login');
+          }
+        }
+      } else {
+        setInitialRoute('Login');
+      }
+    };
+    checkToken();
+  }, []);
+
+  if (initialRoute === null) return null; // Show loading screen or return null until route is set
+
+  return (
+    <NavigationContainer>
+      <Drawer.Navigator
+        initialRouteName={initialRoute}
+        screenOptions={{ headerShown: true }}
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+      >
+        <Drawer.Screen name="Login" component={LoginScreen} options={{ headerTitle: '' }} />
+        <Drawer.Screen name="HomeStack" component={HomeStack} options={{ title: 'Home' }} />
+        <Drawer.Screen name="Today Sales" component={TodaySales} />
+      </Drawer.Navigator>
+    </NavigationContainer>
+  );
+}
 
 export default App;
