@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, TextInput, Button } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../api';
+import { HeaderBackButton } from '@react-navigation/stack';
 
 export default function SaleDetails() {
   const route = useRoute();
@@ -109,8 +110,10 @@ export default function SaleDetails() {
     return <ActivityIndicator size="large" color={'#ff3d00'} style={styles.loader} />;
   }
 
+  //jsx
   return (
     <SafeAreaView style={styles.container}>
+      <Button title='Go Back' onPress={() => navigation.goBack()} />
       <FlatList
         data={data.Trans}
         keyExtractor={(item, index) => index.toString()}

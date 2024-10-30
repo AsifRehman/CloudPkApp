@@ -100,7 +100,7 @@ function App() {
       >
         <Drawer.Screen name="Login" component={LoginScreen} options={{ headerTitle: '' }} />
         <Drawer.Screen name="HomeStack" component={HomeStack} options={{ title: 'Home' }} />
-        <Drawer.Screen name="Today Sales" component={TodaySales} />
+        <Drawer.Screen name="Today Sales" component={TodaySales} options={{title: "Sales"}} />
       </Drawer.Navigator>
     </NavigationContainer>
   );

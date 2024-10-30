@@ -4,7 +4,7 @@ import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import api from '../api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-
+import { formatAmount } from '../utils/util';
 const TodaySales = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,11 +99,17 @@ const TodaySales = () => {
                 <Text style={styles.dateButtonText}>{endDate.toISOString().split('T')[0]}</Text>
               </TouchableOpacity>
             </View>
+            <View style={styles.summaryContainer}>
+              <Text style={styles.summaryText}>
+                Total Sales: {formatAmount(data.reduce((sum, item) => sum + item.NetAmount, 0))}
+              </Text>
+            </View>
             <View style={styles.tableHeader}>
-              <Text style={styles.headerText}>Invoice</Text>
-              <Text style={styles.headerText}>Table No</Text>
-              <Text style={styles.headerText}>Product</Text>
-              <Text style={styles.headerText}>Price</Text>
+              <Text style={styles.headerText}>Inv#.</Text>
+              <Text style={styles.headerText}>Type</Text>
+              <Text style={styles.headerText}>Tbl.No</Text>
+              <Text style={styles.headerText}>Prods</Text>
+              <Text style={styles.headerText}>Amt</Text>
             </View>
           </>
         }
@@ -114,9 +120,10 @@ const TodaySales = () => {
           })}>
             <Animated.View style={[styles.item, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
               <Text style={styles.cellText}>{item.VocNo}</Text>
+              <Text style={styles.cellText}>{item.PT}</Text>
               <Text style={styles.cellText}>{item.TblNo}</Text>
-              <Text style={styles.cellText}>{item.CntProds} Product(s)</Text>
-              <Text style={styles.cellText}>{item.NetAmount}</Text>
+              <Text style={styles.cellTextSmall}>{item.CntProds} Product(s)</Text>
+              <Text style={styles.cellTextRight}>{formatAmount(item.NetAmount)}</Text>
             </Animated.View>
           </TouchableOpacity>
         )}
@@ -184,6 +191,13 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
+  headerTextRight: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ff3d00',
+    flex: 1,
+    textAlign: 'center',
+  },
   item: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -198,6 +212,35 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     color: '#333',
+  },
+  cellTextSmall: {
+    fontSize: 12,
+    flex: 1,
+    textAlign: 'center',
+    color: '#333',
+  },
+  cellTextRight: {
+    fontSize: 16,
+    flex: 1,
+    textAlign: 'right',
+    color: '#333',
+  },
+  summaryContainer: {
+    padding: 10,
+    backgroundColor: '#f222f',
+    borderRadius: 10,
+    marginVertical: 10,
+    shadowColor: '#333',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  summaryText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#fff',
   },
 });
 
