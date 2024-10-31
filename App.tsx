@@ -95,7 +95,7 @@ function App() {
     <NavigationContainer>
       <Drawer.Navigator
         initialRouteName={initialRoute}
-        screenOptions={{ headerShown: true }}
+        screenOptions={{ headerShown: false }}
         drawerContent={(props) => <CustomDrawerContent {...props} />}
       >
         <Drawer.Screen name="Login" component={LoginScreen} options={{ headerTitle: '' }} />
