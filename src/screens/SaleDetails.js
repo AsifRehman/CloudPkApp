@@ -57,6 +57,7 @@ export default function SaleDetails() {
   };
 
   const handleQtyChange = (index, change) => {
+    console.log(change)
     const updatedData = [...data.Trans];
     const item = updatedData[index];
     item.PQty = Math.max(0, item.PQty + change);
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   productName: {
-    flex: 3,
+    flex: 2,
     fontSize: 16,
     color: '#333333',
   },
@@ -268,6 +269,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    zIndex: 100,
+    marginLeft: 10
+
   },
   qtyButton: {
     backgroundColor: '#ff3d00',
@@ -286,12 +290,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 5,
     color: '#333333',
+    zIndex: 100
+
   },
   netAmount: {
     flex: 2,
     fontSize: 16,
     textAlign: 'right',
     color: '#333333',
+    width: 'fit-content',
+    zIndex: 1
+  
   },
   deleteButton: {
     padding: 5,
