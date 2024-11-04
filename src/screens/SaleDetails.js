@@ -14,9 +14,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useRoute, useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../api';
-import {HeaderBackButton} from '@react-navigation/stack';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import {Platform} from 'react-native';
 
 export default function SaleDetails() {
   const route = useRoute();
