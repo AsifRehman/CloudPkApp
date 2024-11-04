@@ -151,7 +151,7 @@ const TodaySales = () => {
               <Text style={styles.cellText}>{item.VocNo}</Text>
               <Text style={styles.cellText}>{item.PT}</Text>
               <Text style={styles.cellText}>{item.TblNo}</Text>
-              <Text style={styles.cellTextSmall}>{item.CntProds} Product(s)</Text>
+              <Text style={styles.cellTextSmall}>{item.CntProds} Prod(s)</Text>
               <Text style={styles.cellTextRight}>{formatAmount(item.NetAmount)}</Text>
             </Animated.View>
           </TouchableOpacity>

@@ -1,17 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, TextInput, Button } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+  TextInput,
+  Button,
+} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useRoute, useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../api';
-import { HeaderBackButton } from '@react-navigation/stack';
+import {HeaderBackButton} from '@react-navigation/stack';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import {Platform} from 'react-native';
 
 export default function SaleDetails() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { vocNo, selectedProductName, selectedProductPrice, selectedProductId } = route.params || {};
+  const {vocNo, selectedProductName, selectedProductPrice, selectedProductId} =
+    route.params || {};
 
-  const [data, setData] = useState({ Trans: [], SCharges: 0 });
+  const [data, setData] = useState({Trans: [], SCharges: 0});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,11 +33,14 @@ export default function SaleDetails() {
 
   useEffect(() => {
     if (data.Trans && (data.PType === 1 || data.PType === 3)) {
-      const totalNetAmount = data.Trans.reduce((acc, curr) => acc + curr.NetAmount, 0);
-      const serviceCharges = totalNetAmount * 0.07;
-      setData(prevData => ({ ...prevData, SCharges: serviceCharges }));
+      const totalNetAmount = data.Trans.reduce(
+        (acc, curr) => acc + curr.NetAmount,
+        0,
+      );
+      const serviceCharges = Math.round(totalNetAmount * 0.07);
+      setData(prevData => ({...prevData, SCharges: serviceCharges}));
     } else {
-      setData(prevData => ({ ...prevData, SCharges: 0 }));
+      setData(prevData => ({...prevData, SCharges: 0}));
     }
   }, [data.Trans, data.PType]);
 
@@ -32,32 +48,37 @@ export default function SaleDetails() {
     try {
       const response = await api.get('/sal/' + vocNo);
       let newData = response.data[0];
-      if ((selectedProductName && selectedProductPrice && selectedProductId) && !isRefresh) {
+      if (
+        selectedProductName &&
+        selectedProductPrice &&
+        selectedProductId &&
+        !isRefresh
+      ) {
         newData.Trans = newData.Trans.map(transaction => ({
           ...transaction,
           ProdName: selectedProductName,
           ListRate: selectedProductPrice,
           ProductId: selectedProductId,
-          NetAmount: transaction.Qty * selectedProductPrice
+          NetAmount: transaction.Qty * selectedProductPrice,
         }));
       }
       setData(newData);
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error('Error fetching data:', error);
       Alert.alert('Error', 'Failed to fetch sale details');
       setLoading(false);
     }
   };
 
-  const handleDelete = (index) => {
+  const handleDelete = index => {
     const updatedData = [...data.Trans];
-    updatedData[index] = { ...updatedData[index], PQty: 0, Qty: 0, NetAmount: 0 };
+    updatedData[index] = {...updatedData[index], PQty: 0, Qty: 0, NetAmount: 0};
     updateDataAndCharges(updatedData);
   };
 
   const handleQtyChange = (index, change) => {
-    console.log(change)
+    console.log(change);
     const updatedData = [...data.Trans];
     const item = updatedData[index];
     item.PQty = Math.max(0, item.PQty + change);
@@ -75,10 +96,17 @@ export default function SaleDetails() {
     updateDataAndCharges(updatedData);
   };
 
-  const updateDataAndCharges = (updatedData) => {
-    const totalNetAmount = updatedData.reduce((acc, curr) => acc + curr.NetAmount, 0);
+  const updateDataAndCharges = updatedData => {
+    const totalNetAmount = updatedData.reduce(
+      (acc, curr) => acc + curr.NetAmount,
+      0,
+    );
     const serviceCharges = totalNetAmount * 0.07;
-    setData(prevData => ({ ...prevData, Trans: updatedData, SCharges: serviceCharges }));
+    setData(prevData => ({
+      ...prevData,
+      Trans: updatedData,
+      SCharges: serviceCharges,
+    }));
   };
 
   const handleSave = () => {
@@ -89,32 +117,43 @@ export default function SaleDetails() {
         ProdName: selectedProductName || transaction.ProdName,
         Rate: selectedProductPrice || transaction.Rate,
         ProductId: selectedProductId || transaction.ProductId,
-        NetAmount: transaction.Qty * (selectedProductPrice || transaction.Rate)
+        NetAmount: transaction.Qty * (selectedProductPrice || transaction.Rate),
       })),
       SCharges: Math.round(data.SCharges),
     };
 
-    api.put('/sal', JSON.stringify(preparedData), {
-      headers: { 'Content-Type': 'application/json' },
-    })
-    .then(() => {
-      Alert.alert('Success', 'Sale details updated successfully');
-      fetchData(true);
-    })
-    .catch(error => {
-      console.error('Error during save:', error);
-      Alert.alert('Error', 'Failed to save details');
-    });
+    api
+      .put('/sal', JSON.stringify(preparedData), {
+        headers: {'Content-Type': 'application/json'},
+      })
+      .then(() => {
+        Alert.alert('Success', 'Sale details updated successfully');
+        fetchData(true);
+      })
+      .catch(error => {
+        console.error('Error during save:', error);
+        Alert.alert('Error', 'Failed to save details');
+      });
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || new Date(data.Date);
+    setData(prevData => ({
+      ...prevData,
+      Date: currentDate.toISOString().split('T')[0],
+    }));
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color={'#ff3d00'} style={styles.loader} />;
+    return (
+      <ActivityIndicator size="large" color={'#ff3d00'} style={styles.loader} />
+    );
   }
 
   //jsx
   return (
     <SafeAreaView style={styles.container}>
-      <Button title='Go Back' onPress={() => navigation.goBack()} />
+      <Button title="Go Back" onPress={() => navigation.goBack()} />
       <FlatList
         data={data.Trans}
         keyExtractor={(item, index) => index.toString()}
@@ -134,14 +173,37 @@ export default function SaleDetails() {
                 <Icon name="calendar" size={20} color="#333333" />
                 <Text style={styles.headerLabel}>Date:</Text>
               </View>
-              <Text style={styles.headerValue}>{data.Date}</Text>
+              <TextInput
+                style={styles.headerValue}
+                value={data.Date}
+                onChangeText={text =>
+                  setData(prevData => ({...prevData, Date: text}))
+                }
+                placeholder="YYYY-MM-DD"
+                keyboardType="default"
+              />
+              <View>
+                <DateTimePicker
+                  value={new Date(data.Date)}
+                  mode="date"
+                  display="default"
+                  onChange={handleDateChange}
+                />
+              </View>
             </View>
             <View style={styles.headerRow}>
               <View style={styles.headerLabelContainer}>
                 <Icon name="table-furniture" size={20} color="#333333" />
                 <Text style={styles.headerLabel}>Table No:</Text>
               </View>
-              <Text style={styles.headerValue}>{data.TblNo}</Text>
+              <TextInput
+                style={styles.headerValue}
+                value={data.TblNo}
+                onChangeText={text =>
+                  setData(prevData => ({...prevData, TblNo: text}))
+                }
+                placeholder="Enter Table No"
+              />
             </View>
             <View style={styles.headerRow}>
               <View style={styles.headerLabelContainer}>
@@ -152,32 +214,41 @@ export default function SaleDetails() {
             </View>
           </View>
         )}
-        renderItem={({ item, index }) => (
+        renderItem={({item, index}) => (
           <View style={styles.item}>
             <Text style={styles.productName}>{item.ProdName}</Text>
             <View style={styles.qtyContainer}>
-              <TouchableOpacity style={styles.qtyButton} onPress={() => handleQtyChange(index, -1)}>
+              <TouchableOpacity
+                style={styles.qtyButton}
+                onPress={() => handleQtyChange(index, -1)}>
                 <Icon name="minus" size={20} color="white" />
               </TouchableOpacity>
               <TextInput
                 style={styles.qtyInput}
-                onChangeText={(text) => handleCustomQtyChange(index, text)}
+                onChangeText={text => handleCustomQtyChange(index, text)}
                 value={item.Qty.toString()}
                 keyboardType="numeric"
               />
-              <TouchableOpacity style={styles.qtyButton} onPress={() => handleQtyChange(index, 1)}>
+              <TouchableOpacity
+                style={styles.qtyButton}
+                onPress={() => handleQtyChange(index, 1)}>
                 <Icon name="plus" size={20} color="white" />
               </TouchableOpacity>
             </View>
             <Text style={styles.netAmount}>{Math.round(item.NetAmount)}</Text>
-            <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(index)}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDelete(index)}>
               <Icon name="delete-outline" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
         )}
         ListFooterComponent={() => {
           const totalQty = data.Trans.reduce((sum, item) => sum + item.Qty, 0);
-          const totalNetAmount = data.Trans.reduce((sum, item) => sum + item.NetAmount, 0);
+          const totalNetAmount = data.Trans.reduce(
+            (sum, item) => sum + item.NetAmount,
+            0,
+          );
           const serviceCharges = data.SCharges || 0;
           const grandTotal = totalNetAmount + serviceCharges;
 
@@ -189,22 +260,33 @@ export default function SaleDetails() {
               </View>
               <View style={styles.footerRow}>
                 <Text style={styles.footerLabel}>Total Amount:</Text>
-                <Text style={styles.footerValue}>{totalNetAmount.toFixed(2)} PKR</Text>
+                <Text style={styles.footerValue}>
+                  {totalNetAmount.toFixed(0)} PKR
+                </Text>
               </View>
               <View style={styles.footerRow}>
                 <Text style={styles.footerLabel}>Service Charges:</Text>
-                <Text style={styles.footerValue}>{serviceCharges.toFixed(2)} PKR</Text>
+                <Text style={styles.footerValue}>
+                  {serviceCharges.toFixed(0)} PKR
+                </Text>
               </View>
               <View style={styles.footerRow}>
                 <Text style={styles.footerLabel}>Grand Total:</Text>
-                <Text style={styles.footerValue}>{grandTotal.toFixed(2)} PKR</Text>
+                <Text style={styles.footerValue}>
+                  {grandTotal.toFixed(0)} PKR
+                </Text>
               </View>
             </View>
           );
         }}
       />
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Icon name="content-save" size={24} color="white" style={styles.saveButtonIcon} />
+        <Icon
+          name="content-save"
+          size={24}
+          color="white"
+          style={styles.saveButtonIcon}
+        />
         <Text style={styles.saveButtonText}>Save</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -260,7 +342,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   productName: {
-    flex: 2,
+    flex: 3,
     fontSize: 16,
     color: '#333333',
   },
@@ -270,8 +352,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     zIndex: 100,
-    marginLeft: 10
-
+    marginLeft: 10,
   },
   qtyButton: {
     backgroundColor: '#ff3d00',
@@ -290,8 +371,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 5,
     color: '#333333',
-    zIndex: 100
-
+    zIndex: 100,
   },
   netAmount: {
     flex: 2,
@@ -299,13 +379,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     color: '#333333',
     width: 'fit-content',
-    zIndex: 1
-  
+    zIndex: 1,
   },
   deleteButton: {
     padding: 5,
     marginLeft: 10,
-    backgroundColor : '#ff3d00',
+    backgroundColor: '#ff3d00',
     borderRadius: 4,
   },
   footer: {
