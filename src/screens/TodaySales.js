@@ -1,10 +1,23 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Animated, RefreshControl, TouchableOpacity, BackHandler, Platform } from 'react-native';
-import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  Animated,
+  RefreshControl,
+  TouchableOpacity,
+  BackHandler,
+  Platform,
+} from 'react-native';
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from '@react-native-community/datetimepicker';
 import api from '../api';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { formatAmount } from '../utils/util';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {formatAmount} from '../utils/util';
 
 const TodaySales = () => {
   const [data, setData] = useState([]);
@@ -23,10 +36,12 @@ const TodaySales = () => {
     try {
       const formattedStartDate = sDate.toISOString().split('T')[0];
       const formattedEndDate = eDate.toISOString().split('T')[0];
-      const response = await api.get(`/stk/salsum?sdate=${formattedStartDate}&edate=${formattedEndDate}&orderby=VocNo`);
+      const response = await api.get(
+        `/stk/salsum?sdate=${formattedStartDate}&edate=${formattedEndDate}&orderby=VocNo`,
+      );
       setData(response?.data?.table || []);
     } catch (error) {
-      console.log("error", error);
+      console.log('error', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -35,10 +50,18 @@ const TodaySales = () => {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
     ]).start();
-    fetchData();  
+    fetchData();
   }, []);
 
   const onRefresh = () => {
@@ -60,15 +83,23 @@ const TodaySales = () => {
     fetchData(startDate, currentDate);
   };
 
+  const handleStartDateChange = (event, date) => {
+    setStartDate(date);
+    fetchData(date, endDate);
+  };
+
+  const handleEndDateChange = (event, date) => {
+    setEndDate(date);
+    fetchData(startDate, date);
+  };
+
   const showStartDatePicker = () => {
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
         value: startDate,
         onChange: (event, date) => {
-          if (date) {
-            setStartDate(date);
-            fetchData(date, endDate);
-          }
+          setStartDate(date);
+          fetchData(date, endDate);
         },
         mode: 'date',
         is24Hour: true,
@@ -103,8 +134,9 @@ const TodaySales = () => {
         return true;
       };
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation])
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
   );
 
   if (loading) {
@@ -116,21 +148,36 @@ const TodaySales = () => {
       <FlatList
         data={data}
         keyExtractor={(item, index) => index.toString()}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListHeaderComponent={
           <>
             <Text style={styles.heading}>Today Sales</Text>
             <View style={styles.dateContainer}>
-              <TouchableOpacity style={styles.dateButton} onPress={showStartDatePicker}>
-                <Text style={styles.dateButtonText}>{startDate.toISOString().split('T')[0]}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.dateButton} onPress={showEndDatePicker}>
-                <Text style={styles.dateButtonText}>{endDate.toISOString().split('T')[0]}</Text>
-              </TouchableOpacity>
+              <View style={styles.dateButton}>
+                <DateTimePicker
+                  value={new Date(startDate)}
+                  mode="date"
+                  display="default"
+                  onChange={handleStartDateChange}
+                />
+              </View>
+              <View style={styles.dateButton}>
+                <DateTimePicker
+                  value={new Date(endDate)}
+                  mode="date"
+                  display="default"
+                  onChange={handleEndDateChange}
+                />
+              </View>
             </View>
             <View style={styles.summaryContainer}>
               <Text style={styles.summaryText}>
-                Total Sales: {formatAmount(data.reduce((sum, item) => sum + item.NetAmount, 0))}
+                Total Sales:{' '}
+                {formatAmount(
+                  data.reduce((sum, item) => sum + item.NetAmount, 0),
+                )}
               </Text>
             </View>
             <View style={styles.tableHeader}>
@@ -142,46 +189,126 @@ const TodaySales = () => {
             </View>
           </>
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => navigation.navigate('HomeStack', {
-            screen: 'SaleDetails',
-            params: { vocNo: item.VocNo },
-          })}>
-            <Animated.View style={[styles.item, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        renderItem={({item}) => (
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('HomeStack', {
+                screen: 'SaleDetails',
+                params: {vocNo: item.VocNo},
+              })
+            }>
+            <Animated.View
+              style={[
+                styles.item,
+                {opacity: fadeAnim, transform: [{translateY: slideAnim}]},
+              ]}>
               <Text style={styles.cellText}>{item.VocNo}</Text>
               <Text style={styles.cellText}>{item.PT}</Text>
               <Text style={styles.cellText}>{item.TblNo}</Text>
               <Text style={styles.cellTextSmall}>{item.CntProds} Prod(s)</Text>
-              <Text style={styles.cellTextRight}>{formatAmount(item.NetAmount)}</Text>
+              <Text style={styles.cellTextRight}>
+                {formatAmount(item.NetAmount)}
+              </Text>
             </Animated.View>
           </TouchableOpacity>
         )}
       />
       {showStart && Platform.OS === 'ios' && (
-        <DateTimePicker value={startDate} mode="date" display="default" onChange={(event, date) => onChangeStartDate(event, date)} />
+        <DateTimePicker
+          value={startDate}
+          mode="date"
+          display="default"
+          onChange={(event, date) => onChangeStartDate(event, date)}
+        />
       )}
       {showEnd && Platform.OS === 'ios' && (
-        <DateTimePicker value={endDate} mode="date" display="default" onChange={(event, date) => onChangeEndDate(event, date)} />
+        <DateTimePicker
+          value={endDate}
+          mode="date"
+          display="default"
+          onChange={(event, date) => onChangeEndDate(event, date)}
+        />
       )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ff3d00', paddingHorizontal: 10 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  heading: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginVertical: 20, color: '#fff' },
-  dateContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  dateButton: { flex: 1, backgroundColor: '#fff', paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, marginHorizontal: 5, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
-  dateButtonText: { color: '#ff3d00', fontSize: 16, fontWeight: 'bold' },
-  tableHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#f8f8f8', borderBottomWidth: 1, borderColor: 'lightgrey' },
-  headerText: { fontSize: 18, fontWeight: 'bold', color: '#ff3d00', flex: 1, textAlign: 'center' },
-  item: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: 'lightgrey', backgroundColor: 'white' },
-  cellText: { fontSize: 16, flex: 1, textAlign: 'center', color: '#333' },
-  cellTextSmall: { fontSize: 12, flex: 1, textAlign: 'center', color: '#333' },
-  cellTextRight: { fontSize: 16, flex: 1, textAlign: 'right', color: '#333' },
-  summaryContainer: { padding: 10, backgroundColor: '#f222f', borderRadius: 10, marginVertical: 10, shadowColor: '#333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
-  summaryText: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#fff' },
+  container: {flex: 1, backgroundColor: '#ff3d00', paddingHorizontal: 10},
+  loader: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  heading: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 20,
+    color: '#fff',
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  dateButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    marginHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  dateButtonText: {color: '#ff3d00', fontSize: 16, fontWeight: 'bold'},
+  tableHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#f8f8f8',
+    borderBottomWidth: 1,
+    borderColor: 'lightgrey',
+  },
+  headerText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ff3d00',
+    flex: 1,
+    textAlign: 'center',
+  },
+  item: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderColor: 'lightgrey',
+    backgroundColor: 'white',
+  },
+  cellText: {fontSize: 16, flex: 1, textAlign: 'center', color: '#333'},
+  cellTextSmall: {fontSize: 12, flex: 1, textAlign: 'center', color: '#333'},
+  cellTextRight: {fontSize: 16, flex: 1, textAlign: 'right', color: '#333'},
+  summaryContainer: {
+    padding: 10,
+    backgroundColor: '#f222f',
+    borderRadius: 10,
+    marginVertical: 10,
+    shadowColor: '#333',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  summaryText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#fff',
+  },
 });
 
 export default TodaySales;
