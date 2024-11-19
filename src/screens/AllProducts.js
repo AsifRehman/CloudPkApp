@@ -16,7 +16,7 @@ const AllProducts = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await api.get('https://api.cloudpkerp.com:8081/api/product');
+            const response = await api.get('/product');
             console.log('Products:', response.data);
             setProducts(response.data);
             setFilteredProducts(response.data); // Initialize with all products

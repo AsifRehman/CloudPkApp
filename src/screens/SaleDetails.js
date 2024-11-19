@@ -24,6 +24,7 @@ export default function SaleDetails() {
 
   const [data, setData] = useState({Trans: [], SCharges: 0});
   const [loading, setLoading] = useState(true);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -45,22 +46,24 @@ export default function SaleDetails() {
   const fetchData = async (isRefresh = false) => {
     try {
       const response = await api.get('/sal/' + vocNo);
-      let newData = response.data[0];
-      if (
-        selectedProductName &&
-        selectedProductPrice &&
-        selectedProductId &&
-        !isRefresh
-      ) {
-        newData.Trans = newData.Trans.map(transaction => ({
-          ...transaction,
-          ProdName: selectedProductName,
-          ListRate: selectedProductPrice,
-          ProductId: selectedProductId,
-          NetAmount: transaction.Qty * selectedProductPrice,
-        }));
-      }
-      setData(newData);
+      setData(response.data[0]);
+      // console.log(response.data[0])
+      // let newData = response.data[0];
+      // if (
+      //   selectedProductName &&
+      //   selectedProductPrice &&
+      //   selectedProductId &&
+      //   !isRefresh
+      // ) {
+      //   newData.Trans = newData.Trans.map(transaction => ({
+      //     ...transaction,
+      //     ProdName: selectedProductName,
+      //     ListRate: selectedProductPrice,
+      //     ProductId: selectedProductId,
+      //     NetAmount: transaction.Qty * selectedProductPrice,
+      //   }));
+      // }
+      // setData(newData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -140,6 +143,7 @@ export default function SaleDetails() {
       ...prevData,
       Date: currentDate.toISOString().split('T')[0],
     }));
+    setShowDatePicker(false);
   };
 
   if (loading) {
@@ -179,15 +183,17 @@ export default function SaleDetails() {
                 }
                 placeholder="YYYY-MM-DD"
                 keyboardType="default"
+                onFocus={() => setShowDatePicker(true)}
               />
-              <View>
+              {showDatePicker && (
                 <DateTimePicker
                   value={new Date(data.Date)}
                   mode="date"
                   display="default"
                   onChange={handleDateChange}
+                  onClose={() => setShowDatePicker(false)}
                 />
-              </View>
+              )}
             </View>
             <View style={styles.headerRow}>
               <View style={styles.headerLabelContainer}>

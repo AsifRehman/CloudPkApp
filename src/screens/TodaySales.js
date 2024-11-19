@@ -69,22 +69,9 @@ const TodaySales = () => {
     fetchData();
   };
 
-  const onChangeStartDate = (event, selectedDate) => {
-    const currentDate = selectedDate || startDate;
-    setShowStart(false); // Close picker
-    setStartDate(currentDate);
-    fetchData(currentDate, endDate);
-  };
-
-  const onChangeEndDate = (event, selectedDate) => {
-    const currentDate = selectedDate || endDate;
-    setShowEnd(false); // Close picker
-    setEndDate(currentDate);
-    fetchData(startDate, currentDate);
-  };
-
   const handleStartDateChange = (event, date) => {
     setStartDate(date);
+    setEndDate(date)
     fetchData(date, endDate);
   };
 
@@ -93,51 +80,17 @@ const TodaySales = () => {
     fetchData(startDate, date);
   };
 
-  const showStartDatePicker = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: startDate,
-        onChange: (event, date) => {
-          setStartDate(date);
-          fetchData(date, endDate);
-        },
-        mode: 'date',
-        is24Hour: true,
-      });
-    } else {
-      setShowStart(true);
-    }
-  };
-
-  const showEndDatePicker = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: endDate,
-        onChange: (event, date) => {
-          if (date) {
-            setEndDate(date);
-            fetchData(startDate, date);
-          }
-        },
-        mode: 'date',
-        is24Hour: true,
-      });
-    } else {
-      setShowEnd(true);
-    }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      const onBackPress = () => {
-        navigation.navigate('Home');
-        return true;
-      };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     const onBackPress = () => {
+  //       navigation.navigate('Home');
+  //       return true;
+  //     };
+  //     BackHandler.addEventListener('hardwareBackPress', onBackPress);
+  //     return () =>
+  //       BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+  //   }, [navigation]),
+  // );
 
   if (loading) {
     return <ActivityIndicator size="large" style={styles.loader} />;
@@ -155,22 +108,20 @@ const TodaySales = () => {
           <>
             <Text style={styles.heading}>Today Sales</Text>
             <View style={styles.dateContainer}>
-              <View style={styles.dateButton}>
-                <DateTimePicker
-                  value={new Date(startDate)}
-                  mode="date"
-                  display="default"
-                  onChange={handleStartDateChange}
-                />
-              </View>
-              <View style={styles.dateButton}>
-                <DateTimePicker
-                  value={new Date(endDate)}
-                  mode="date"
-                  display="default"
-                  onChange={handleEndDateChange}
-                />
-              </View>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowStart(true)}>
+                <Text style={styles.dateButtonText}>
+                  {startDate.toDateString()}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowEnd(true)}>
+                <Text style={styles.dateButtonText}>
+                  {endDate.toDateString()}
+                </Text>
+              </TouchableOpacity>
             </View>
             <View style={styles.summaryContainer}>
               <Text style={styles.summaryText}>
@@ -213,20 +164,26 @@ const TodaySales = () => {
           </TouchableOpacity>
         )}
       />
-      {showStart && Platform.OS === 'ios' && (
+      {showStart && (
         <DateTimePicker
           value={startDate}
           mode="date"
           display="default"
-          onChange={(event, date) => onChangeStartDate(event, date)}
+          onChange={(event, date) => {
+            setShowStart(false);
+            handleStartDateChange(event, date);
+          }}
         />
       )}
-      {showEnd && Platform.OS === 'ios' && (
+      {showEnd && (
         <DateTimePicker
           value={endDate}
           mode="date"
           display="default"
-          onChange={(event, date) => onChangeEndDate(event, date)}
+          onChange={(event, date) => {
+            setShowEnd(false);
+            handleEndDateChange(event, date);
+          }}
         />
       )}
     </SafeAreaView>
