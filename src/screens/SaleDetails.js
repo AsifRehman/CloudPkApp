@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,22 +10,30 @@ import {
   TextInput,
   Button,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {useRoute, useNavigation} from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../api';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AllProducts from './AllProducts';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export default function SaleDetails() {
   const route = useRoute();
   const navigation = useNavigation();
-  const {vocNo, selectedProductName, selectedProductPrice, selectedProductId} =
+  const { vocNo, selectedProductName, selectedProductPrice, selectedProductId } =
     route.params || {};
 
-  const [data, setData] = useState({Trans: [], SCharges: 0});
+  const [data, setData] = useState({ Trans: [], SCharges: 0 });
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showModel, setShowModel] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  function handleOpenModel(index) {
+    setCurrentIndex(index);
+    setShowModel(true);
+  }
 
   useEffect(() => {
     fetchData();
@@ -38,9 +46,9 @@ export default function SaleDetails() {
         0,
       );
       const serviceCharges = Math.round(totalNetAmount * 0.07);
-      setData(prevData => ({...prevData, SCharges: serviceCharges}));
+      setData(prevData => ({ ...prevData, SCharges: serviceCharges }));
     } else {
-      setData(prevData => ({...prevData, SCharges: 0}));
+      setData(prevData => ({ ...prevData, SCharges: 0 }));
     }
   }, [data.Trans, data.PType]);
 
@@ -75,7 +83,7 @@ export default function SaleDetails() {
 
   const handleDelete = index => {
     const updatedData = [...data.Trans];
-    updatedData[index] = {...updatedData[index], PQty: 0, Qty: 0, NetAmount: 0};
+    updatedData[index] = { ...updatedData[index], PQty: 0, Qty: 0, NetAmount: 0 };
     updateDataAndCharges(updatedData);
   };
 
@@ -136,7 +144,7 @@ export default function SaleDetails() {
 
     api
       .put('/sal', JSON.stringify(preparedData), {
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
       })
       .then(() => {
         Alert.alert('Success', 'Sale details updated successfully');
@@ -164,17 +172,34 @@ export default function SaleDetails() {
   }
 
   //jsx
-  const handleSelectProduct = (product) => {
+  const handleSelectProduct = (productId, prodName, listRate) => {
+    Alert.alert('Selected Product', `${prodName} - ${listRate} {current index: ${currentIndex}}`);
+    const trans = [...data.Trans]
+    trans[currentIndex].ProductId = productId;
+    trans[currentIndex].ProdName = prodName;
+    trans[currentIndex].Rate = listRate;
+    trans[currentIndex].NetAmount = trans[currentIndex].Qty * listRate;
     setData(prevData => ({
       ...prevData,
-      Trans: prevData.Trans.map(transaction => ({
-        ...transaction,
-        ProdName: product.name,
-        ListRate: product.price,
-        ProductId: product.id,
-        NetAmount: transaction.Qty * product.price,
-      })),
-    }));
+      Trans: trans
+    }))
+
+    // setData(prevData => ({
+    //   ...prevData,
+    //   Trans: prevData.Trans.map(transaction =>
+    //   transaction.id === proId
+    //     ? {
+    //       ...transaction,
+    //       ProdName: proName,
+    //       Rate: listRate,
+    //       ProductId: proId,
+    //       NetAmount: transaction.Qty * listRate,
+    //       vocNo: vocNo,
+    //     }
+    //     : transaction,
+    //   ),
+    // }));
+
   };
 
   return (
@@ -203,7 +228,7 @@ export default function SaleDetails() {
                 style={styles.headerValue}
                 value={data.Date}
                 onChangeText={text =>
-                  setData(prevData => ({...prevData, Date: text}))
+                  setData(prevData => ({ ...prevData, Date: text }))
                 }
                 placeholder="YYYY-MM-DD"
                 keyboardType="default"
@@ -228,7 +253,7 @@ export default function SaleDetails() {
                 style={styles.headerValue}
                 value={data.TblNo}
                 onChangeText={text =>
-                  setData(prevData => ({...prevData, TblNo: text}))
+                  setData(prevData => ({ ...prevData, TblNo: text }))
                 }
                 placeholder="Enter Table No"
               />
@@ -242,9 +267,9 @@ export default function SaleDetails() {
             </View>
           </View>
         )}
-        renderItem={({item, index}) => (
+        renderItem={({ item, index }) => (
           <View style={styles.item}>
-            <Text style={styles.productName} onPress={()=>setShowModel(true)}>{item.ProdName}</Text>
+            <Text style={styles.productName} onPress={() => handleOpenModel(index)}>{item.ProdName}</Text>
             <View style={styles.qtyContainer}>
               <TouchableOpacity
                 style={styles.qtyButton}
@@ -263,15 +288,15 @@ export default function SaleDetails() {
                 <Icon name="plus" size={20} color="white" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.netAmount}>{Math.round(item.NetAmount)}</Text>
+            <Text style={styles.netAmount}>{Math.round(item.Rate) || "100"}</Text>
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={() => handleDelete(index)}>
               <Icon name="delete-outline" size={24} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => navigation.navigate('AllProducts', { data, index, onSelect: handleSelectProduct })}>
+              style={styles.customButton}
+              onPress={() => handleOpenModel(index)}>
               <Icon name="tag-edit-outline" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -322,10 +347,15 @@ export default function SaleDetails() {
         />
         <Text style={styles.saveButtonText}>Save</Text>
       </TouchableOpacity>
-      {showModel && <View style={styles.modelContainer}/>}
+      {showModel && (
+        <View style={styles.modelContainer}>
+          <AllProducts handleSelectProduct={handleSelectProduct} />
+          <TouchableOpacity style={styles.closeButton} onPress={() => setShowModel(false)}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
-
-    
   );
 }
 
@@ -350,7 +380,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
-    width: '60%',
+    width: '100%',
   },
   headerLabelContainer: {
     flexDirection: 'row',
@@ -367,7 +397,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333333',
     flex: 1,
-    // textAlign: 'right',
   },
   item: {
     padding: 15,
@@ -387,7 +416,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    zIndex: 100,
     marginLeft: 10,
   },
   qtyButton: {
@@ -407,15 +435,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 5,
     color: '#333333',
-    zIndex: 100,
   },
   netAmount: {
     flex: 2,
     fontSize: 16,
     textAlign: 'right',
     color: '#333333',
-    width: 'fit-content',
-    zIndex: 1,
   },
   deleteButton: {
     padding: 5,
@@ -461,13 +486,39 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   modelContainer: {
-    // position: 'absolute',
-    // top: 0,
-    // left: 0,
-    // right: 0,
-    // bottom: 0,
-    justifyContent: 'center',
+    flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: '10%',
+    left: 15,
+    right: 15,
+    height: '70%',
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: 'white',
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#ff3d00',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.35,
+    shadowRadius: 15,
   },
+  closeButton: {
+    width: '100%',
+    color: 'bold',
+    fontSize: 18,
+    fontWeight: 'bold',
+    paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: "#ff3d00"
+  },
+
+  closeButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: 'bold',
+  }
 });

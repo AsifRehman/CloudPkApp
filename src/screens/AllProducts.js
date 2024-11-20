@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, RefreshControl, Alert } from 'react-native';
 import api from '../api';
-import { useNavigation } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 
-const AllProducts = () => {
+const AllProducts = ({handleSelectProduct}) => {
     const route = useRoute();
     const { vocNo } = route.params || {};
     const [products, setProducts] = useState([]);
@@ -12,7 +11,7 @@ const AllProducts = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const navigation = useNavigation();
+
 
     const fetchProducts = async () => {
         try {
@@ -30,6 +29,7 @@ const AllProducts = () => {
 
     useEffect(() => {
         fetchProducts();
+
     }, []);
 
     const handleSearch = (text) => {
@@ -50,15 +50,21 @@ const AllProducts = () => {
         setRefreshing(true);
         fetchProducts(); // Re-fetch products on pull-to-refresh
     };
-
+    const handleSelectedProduct = (productId, prodName, listRate) => {
+        // Alert.alert('Product Selected', `Product ID: ${productId}\nProduct Name: ${prodName}\nPrice: ${listRate} PKR`);
+        handleSelectProduct(productId, prodName, listRate);
+    }
     if (loading) {
         return <ActivityIndicator size="large" />;
     }
 
+
+
+
     return (
         <View style={styles.container}>
             <Text style={styles.heading}>All Products</Text>
-            
+
             {/* Search Bar */}
             <TextInput
                 style={styles.searchBar}
@@ -67,7 +73,7 @@ const AllProducts = () => {
                 onChangeText={handleSearch}
                 placeholderTextColor={'#ff3d00'}
             />
-            
+
             {/* Product List */}
             <FlatList
                 data={filteredProducts}
@@ -76,16 +82,11 @@ const AllProducts = () => {
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
                 renderItem={({ item }) => (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.productItem}
-                        onPress={() => navigation.navigate('Sale Details', {
-                            selectedProductName: item.ProdName,
-                            selectedProductPrice: item.ListRate,
-                            selectedProductId: item.ProductId,
-                            vocNo: vocNo
-                        })}
+                        onPress={() => handleSelectedProduct(item.ProductId, item.ProdName, item.ListRate)}
                     >
-                        <Text style={styles.productName}>{item.ProductId || 'No id'}) Product Name: {item.ProdName || 'No Name'}</Text>
+                        <Text style={styles.productName}>{item.ProductId || 'No id'} Product Name: {item.ProdName || 'No Name'}</Text>
                         <Text style={styles.productPrice}>Price: {item.ListRate || 'N/A'} PKR</Text>
                     </TouchableOpacity>
                 )}
