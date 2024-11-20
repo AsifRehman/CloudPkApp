@@ -69,13 +69,13 @@ const TodaySales = () => {
     fetchData();
   };
 
-  const handleStartDateChange = (event, date) => {
+  const handleStartDateChange = (_, date) => {
     setStartDate(date);
     setEndDate(date)
-    fetchData(date, endDate);
+    fetchData(date, date);
   };
 
-  const handleEndDateChange = (event, date) => {
+  const handleEndDateChange = (_, date) => {
     setEndDate(date);
     fetchData(startDate, date);
   };

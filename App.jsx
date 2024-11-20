@@ -13,6 +13,7 @@ import TodaySales from './src/screens/TodaySales';
 import SaleDetails from './src/screens/SaleDetails';
 import ProfileScreen from './src/screens/ProfileScreen';
 import BlueScreen from './src/screens/BlueScreen';
+import AllProducts from './src/screens/AllProducts';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -24,6 +25,7 @@ function HomeStack() {
       <Stack.Screen name="TodaySales" component={TodaySales} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Blue" component={BlueScreen} />
+      <Stack.Screen name="AllProducts" component={AllProducts} />
       <Stack.Screen name="SaleDetails" component={SaleDetails} initialParams={{ vocNo: '1' }} />
     </Stack.Navigator>
   );

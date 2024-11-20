@@ -25,6 +25,7 @@ export default function SaleDetails() {
   const [data, setData] = useState({Trans: [], SCharges: 0});
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showModel, setShowModel] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -97,6 +98,16 @@ export default function SaleDetails() {
     updateDataAndCharges(updatedData);
   };
 
+  const hanldeProductIdChange = (index, obj) => {
+    const updatedData = [...data.Trans];
+    const item = updatedData[index];
+    item.ProductId = obj.ProductId;
+    item.ProdName = obj.ProdName;
+    item.Rate = obj.Rate;
+    item.NetAmount = item.Qty * (obj.Rate || 0);
+    updateDataAndCharges(updatedData);
+  };
+
   const updateDataAndCharges = updatedData => {
     const totalNetAmount = updatedData.reduce(
       (acc, curr) => acc + curr.NetAmount,
@@ -153,6 +164,19 @@ export default function SaleDetails() {
   }
 
   //jsx
+  const handleSelectProduct = (product) => {
+    setData(prevData => ({
+      ...prevData,
+      Trans: prevData.Trans.map(transaction => ({
+        ...transaction,
+        ProdName: product.name,
+        ListRate: product.price,
+        ProductId: product.id,
+        NetAmount: transaction.Qty * product.price,
+      })),
+    }));
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Button title="Go Back" onPress={() => navigation.goBack()} />
@@ -220,7 +244,7 @@ export default function SaleDetails() {
         )}
         renderItem={({item, index}) => (
           <View style={styles.item}>
-            <Text style={styles.productName}>{item.ProdName}</Text>
+            <Text style={styles.productName} onPress={()=>setShowModel(true)}>{item.ProdName}</Text>
             <View style={styles.qtyContainer}>
               <TouchableOpacity
                 style={styles.qtyButton}
@@ -244,6 +268,11 @@ export default function SaleDetails() {
               style={styles.deleteButton}
               onPress={() => handleDelete(index)}>
               <Icon name="delete-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => navigation.navigate('AllProducts', { data, index, onSelect: handleSelectProduct })}>
+              <Icon name="tag-edit-outline" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
         )}
@@ -293,7 +322,10 @@ export default function SaleDetails() {
         />
         <Text style={styles.saveButtonText}>Save</Text>
       </TouchableOpacity>
+      {showModel && <View style={styles.modelContainer}/>}
     </SafeAreaView>
+
+    
   );
 }
 
@@ -427,5 +459,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  modelContainer: {
+    // position: 'absolute',
+    // top: 0,
+    // left: 0,
+    // right: 0,
+    // bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
 });
