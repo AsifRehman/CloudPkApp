@@ -33,6 +33,7 @@ export default function SaleDetails() {
   function handleOpenModel(index) {
     setCurrentIndex(index);
     setShowModel(true);
+
   }
 
   useEffect(() => {
@@ -171,10 +172,10 @@ export default function SaleDetails() {
     );
   }
 
-  //jsx
   const handleSelectProduct = (productId, prodName, listRate) => {
-    Alert.alert('Selected Product', `${prodName} - ${listRate} {current index: ${currentIndex}}`);
+    // Alert.alert('Selected Product', `${prodName} - ${listRate} {current index: ${currentIndex}}`);
     const trans = [...data.Trans]
+    if (currentIndex >= 0) {
     trans[currentIndex].ProductId = productId;
     trans[currentIndex].ProdName = prodName;
     trans[currentIndex].Rate = listRate;
@@ -183,25 +184,28 @@ export default function SaleDetails() {
       ...prevData,
       Trans: trans
     }))
-
-    // setData(prevData => ({
-    //   ...prevData,
-    //   Trans: prevData.Trans.map(transaction =>
-    //   transaction.id === proId
-    //     ? {
-    //       ...transaction,
-    //       ProdName: proName,
-    //       Rate: listRate,
-    //       ProductId: proId,
-    //       NetAmount: transaction.Qty * listRate,
-    //       vocNo: vocNo,
-    //     }
-    //     : transaction,
-    //   ),
-    // }));
-
+  }
+  else {
+    const newTrans = {
+      SrNo: trans.length + 1,
+      ProductId: productId,
+      ProdName: prodName,
+      Rate: listRate,
+      Qty: 1,
+      PQty: 1,
+      NetAmount: listRate
+    }
+    trans.push(newTrans)
+    setData(prevData => ({
+      ...prevData,
+      Trans: trans
+    }))
+  }
+   setShowModel(false)
+    
   };
 
+  //jsx
   return (
     <SafeAreaView style={styles.container}>
       <Button title="Go Back" onPress={() => navigation.goBack()} />
@@ -265,43 +269,53 @@ export default function SaleDetails() {
               </View>
               <Text style={styles.headerValue}>{data.PType}</Text>
             </View>
-          </View>
-        )}
-        renderItem={({ item, index }) => (
-          <View style={styles.item}>
-            <Text style={styles.productName} onPress={() => handleOpenModel(index)}>{item.ProdName}</Text>
-            <View style={styles.qtyContainer}>
+            <View style={styles.headerRow}></View>
               <TouchableOpacity
-                style={styles.qtyButton}
-                onPress={() => handleQtyChange(index, -1)}>
-                <Icon name="minus" size={20} color="white" />
-              </TouchableOpacity>
-              <TextInput
-                style={styles.qtyInput}
-                onChangeText={text => handleCustomQtyChange(index, text)}
-                value={item.Qty.toString()}
-                keyboardType="numeric"
-              />
-              <TouchableOpacity
-                style={styles.qtyButton}
-                onPress={() => handleQtyChange(index, 1)}>
-                <Icon name="plus" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.netAmount}>{Math.round(item.Rate) || "100"}</Text>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDelete(index)}>
-              <Icon name="delete-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.customButton}
-              onPress={() => handleOpenModel(index)}>
-              <Icon name="tag-edit-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        )}
-        ListFooterComponent={() => {
+                style={styles.addButton}
+                onPress={() => {
+                  setCurrentIndex(-1);
+                    setShowModel(true);
+                  }}>
+                  <Icon name="plus" size={24} color="#fff" />
+                  <Text onPress={() => handleOpenModel(currentIndex)} style={styles.saveButton}>Add Products</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              renderItem={({ item, index }) => (
+                <View style={styles.item}>
+                <Text style={styles.productName} onPress={() => handleOpenModel(index)}>{item.ProdName}</Text>
+                <View style={styles.qtyContainer}>
+                  <TouchableOpacity
+                  style={styles.qtyButton}
+                  onPress={() => handleQtyChange(index, -1)}>
+                  <Icon name="minus" size={20} color="white" />
+                  </TouchableOpacity>
+                  <TextInput
+                  style={styles.qtyInput}
+                  onChangeText={text => handleCustomQtyChange(index, text)}
+                  value={item.Qty.toString()}
+                  keyboardType="numeric"
+                  />
+                  <TouchableOpacity
+                  style={styles.qtyButton}
+                  onPress={() => handleQtyChange(index, 1)}>
+                  <Icon name="plus" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.netAmount}>{Math.round(item.Rate) || "100"}</Text>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(index)}>
+                  <Icon name="delete-outline" size={24} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.customButton}
+                  onPress={() => handleOpenModel(index)}>
+                  <Icon name="tag-edit-outline" size={24} color="#fff" />
+                </TouchableOpacity>
+                </View>
+              )}
+              ListFooterComponent={() => {
           const totalQty = data.Trans.reduce((sum, item) => sum + item.Qty, 0);
           const totalNetAmount = data.Trans.reduce(
             (sum, item) => sum + item.NetAmount,
@@ -351,7 +365,7 @@ export default function SaleDetails() {
         <View style={styles.modelContainer}>
           <AllProducts handleSelectProduct={handleSelectProduct} />
           <TouchableOpacity style={styles.closeButton} onPress={() => setShowModel(false)}>
-            <Text style={styles.closeButtonText}>Close</Text>
+            {/* <Text style={styles.closeButtonText}>Close</Text> */}
           </TouchableOpacity>
         </View>
       )}
@@ -475,7 +489,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     margin: 15,
+    color: 'white',
     borderRadius: 5,
+
   },
   saveButtonIcon: {
     marginRight: 10,
