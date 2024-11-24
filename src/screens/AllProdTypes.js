@@ -1,26 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, RefreshControl, Alert } from 'react-native';
 import api from '../api';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const AllProducts = ({handleSelectProduct}) => {
+const AllProdTypes = ({handleSelectProduct}) => {
+
+    const navigation = useNavigation();
+
     const route = useRoute();
+    const { vocNo } = route.params || {};
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const { ProdTypeId } = route.params;
-    useEffect(() => {
-        if (ProdTypeId) {
-            const filtered = products.filter(product => product.ProdTypeId === ProdTypeId);
-            setFilteredProducts(filtered);
-        }
-    }, [ProdTypeId, products]);
+
+
     const fetchProducts = async () => {
         try {
-            const response = await api.get('/product');
-            console.log('Products:', response.data);
+            const response = await api.get('/prodtype');
+            console.log('ProdTypes:', response.data);
             setProducts(response.data);
             setFilteredProducts(response.data); // Initialize with all products
         } catch (error) {
@@ -40,11 +39,11 @@ const AllProducts = ({handleSelectProduct}) => {
         setSearchQuery(text);
 
         const filtered = products.filter(item => {
-            const productName = item.ProdName ? item.ProdName.toLowerCase() : '';
-            const productId = item.ProductId ? item.ProductId.toString() : '';
+            const productName = item.ProdTypeName ? item.ProdType.toLowerCase() : '';
+            const ProdTypeId = item.ProdTypeId ? item.ProdTypeId.toString() : '';
             const query = text.toLowerCase();
 
-            return productName.includes(query) || productId.includes(query);
+            return productName.includes(query) || ProdTypeId.includes(query);
         });
 
         setFilteredProducts(filtered);
@@ -54,9 +53,8 @@ const AllProducts = ({handleSelectProduct}) => {
         setRefreshing(true);
         fetchProducts(); // Re-fetch products on pull-to-refresh
     };
-    const handleSelectedProduct = (productId, prodName, listRate) => {
-        // Alert.alert('Product Selected', `Product ID: ${productId}\nProduct Name: ${prodName}\nPrice: ${listRate} PKR`);
-        handleSelectProduct(productId, prodName, listRate);
+    const handleSelectedProduct = (ProdTypeId, ProdType) => {
+        handleSelectProduct(ProdTypeId, ProdType);
     }
     if (loading) {
         return <ActivityIndicator size="large" />;
@@ -88,10 +86,9 @@ const AllProducts = ({handleSelectProduct}) => {
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         style={styles.productItem}
-                        onPress={() => handleSelectedProduct(item.ProductId, item.ProdName, item.ListRate)}
+                        onPress={() => navigation.navigate('AllProducts', { ProdTypeId: item.ProdTypeId })}
                     >
-                        <Text style={styles.productName}>{item.ProductId || 'No id'} Product Name: {item.ProdName || 'No Name'}</Text>
-                        <Text style={styles.productPrice}>Price: {item.ListRate || 'N/A'} PKR</Text>
+                        <Text style={styles.productName}>{item.ProdTypeId || 'No id'} {item.ProdTypeName || 'No Name'}</Text>
                     </TouchableOpacity>
                 )}
             />
@@ -149,4 +146,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default AllProducts;
+export default AllProdTypes;

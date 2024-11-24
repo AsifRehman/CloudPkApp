@@ -14,6 +14,7 @@ import SaleDetails from './src/screens/SaleDetails';
 import ProfileScreen from './src/screens/ProfileScreen';
 import BlueScreen from './src/screens/BlueScreen';
 import AllProducts from './src/screens/AllProducts';
+import AllProdTypes from './src/screens/AllProdTypes';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -26,6 +27,7 @@ function HomeStack() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Blue" component={BlueScreen} />
       <Stack.Screen name="AllProducts" component={AllProducts} />
+      <Stack.Screen name="AllProdTypes" component={AllProdTypes} />
       <Stack.Screen name="SaleDetails" component={SaleDetails} initialParams={{ vocNo: '1' }} />
     </Stack.Navigator>
   );
@@ -45,6 +47,7 @@ function CustomDrawerContent(props) {
         <DrawerItem label="Home" onPress={() => props.navigation.navigate('HomeStack')} />
         <DrawerItem label="Today Sales" onPress={() => props.navigation.navigate('TodaySales')} />
         <DrawerItem label="All Products" onPress={() => props.navigation.navigate('AllProducts')} />
+        <DrawerItem label="All ProdTypes" onPress={() => props.navigation.navigate('AllProdTypes')} />
       </View>
 
       {/* Logout Button */}
