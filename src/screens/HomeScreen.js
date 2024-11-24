@@ -103,6 +103,7 @@ const HomeScreen = ({ navigation }) => {
         >
           <Text style={styles.buttonText}>GO TO BLUE SCREEN</Text>
         </TouchableOpacity>
+        
       </Animated.View>
 
       {/* Add extra content below buttons to fill the page */}

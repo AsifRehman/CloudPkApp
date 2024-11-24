@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   TextInput,
   Button,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -28,7 +29,7 @@ export default function SaleDetails() {
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showModel, setShowModel] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(-1);
 
   function handleOpenModel(index) {
     setCurrentIndex(index);
@@ -89,12 +90,15 @@ export default function SaleDetails() {
   };
 
   const handleQtyChange = (index, change) => {
-    console.log(change);
     const updatedData = [...data.Trans];
     const item = updatedData[index];
+    if (item.Qty === 1 && change < 0) {
+      return; // Do not decrease if Qty is 1
+    }
     item.PQty = Math.max(0, item.PQty + change);
     item.Qty = item.PQty;
-    item.NetAmount = item.Qty * (item.ListRate || item.Rate);
+    item.NetAmount = item.Qty * item.Rate;
+
     updateDataAndCharges(updatedData);
   };
 
@@ -107,15 +111,15 @@ export default function SaleDetails() {
     updateDataAndCharges(updatedData);
   };
 
-  const hanldeProductIdChange = (index, obj) => {
-    const updatedData = [...data.Trans];
-    const item = updatedData[index];
-    item.ProductId = obj.ProductId;
-    item.ProdName = obj.ProdName;
-    item.Rate = obj.Rate;
-    item.NetAmount = item.Qty * (obj.Rate || 0);
-    updateDataAndCharges(updatedData);
-  };
+  // const hanldeProductIdChange = (index, obj) => {
+  //   const updatedData = [...data.Trans];
+  //   const item = updatedData[index];
+  //   item.ProductId = obj.ProductId;
+  //   item.ProdName = obj.ProdName;
+  //   item.Rate = obj.Rate;
+  //   item.NetAmount = item.Qty * (obj.Rate || 0);
+  //   updateDataAndCharges(updatedData);
+  // };
 
   const updateDataAndCharges = updatedData => {
     const totalNetAmount = updatedData.reduce(
@@ -166,209 +170,234 @@ export default function SaleDetails() {
     setShowDatePicker(false);
   };
 
+  const handleSelectProduct = (productId, prodName, listRate) => {
+    // Alert.alert('Selected Product', `${prodName} - ${listRate} {current index: ${currentIndex}}`);
+    const trans = [...data.Trans]
+    if (currentIndex >= 0) {
+      trans[currentIndex].ProductId = productId;
+      trans[currentIndex].ProdName = prodName;
+      trans[currentIndex].Rate = listRate;
+      trans[currentIndex].NetAmount = trans[currentIndex].Qty * listRate;
+      setData(prevData => ({
+        ...prevData,
+        Trans: trans
+      }))
+      setCurrentIndex(-1)
+    }
+    else {
+      const newTrans = {
+        SrNo: trans.length + 1,
+        ProductId: productId,
+        ProdName: prodName,
+        Rate: listRate,
+        Qty: 1,
+        PQty: 1,
+        NetAmount: listRate
+      }
+      trans.push(newTrans)
+      setData(prevData => ({
+        ...prevData,
+        Trans: trans
+      }))
+    }
+    setShowModel(false)
+
+  };
   if (loading) {
     return (
       <ActivityIndicator size="large" color={'#ff3d00'} style={styles.loader} />
     );
   }
 
-  const handleSelectProduct = (productId, prodName, listRate) => {
-    // Alert.alert('Selected Product', `${prodName} - ${listRate} {current index: ${currentIndex}}`);
-    const trans = [...data.Trans]
-    if (currentIndex >= 0) {
-    trans[currentIndex].ProductId = productId;
-    trans[currentIndex].ProdName = prodName;
-    trans[currentIndex].Rate = listRate;
-    trans[currentIndex].NetAmount = trans[currentIndex].Qty * listRate;
-    setData(prevData => ({
-      ...prevData,
-      Trans: trans
-    }))
-  }
-  else {
-    const newTrans = {
-      SrNo: trans.length + 1,
-      ProductId: productId,
-      ProdName: prodName,
-      Rate: listRate,
-      Qty: 1,
-      PQty: 1,
-      NetAmount: listRate
-    }
-    trans.push(newTrans)
-    setData(prevData => ({
-      ...prevData,
-      Trans: trans
-    }))
-  }
-   setShowModel(false)
-    
-  };
 
   //jsx
   return (
     <SafeAreaView style={styles.container}>
-      <Button title="Go Back" onPress={() => navigation.goBack()} />
-      <FlatList
-        data={data.Trans}
-        keyExtractor={(item, index) => index.toString()}
-        onRefresh={() => fetchData(true)}
-        refreshing={loading}
-        ListHeaderComponent={() => (
-          <View style={styles.header}>
-            <View style={styles.headerRow}>
-              <View style={styles.headerLabelContainer}>
-                <Icon name="file-document-outline" size={20} color="#333333" />
-                <Text style={styles.headerLabel}>Invoice No:</Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <Button title="Go Back" onPress={() => navigation.goBack()} />
+        <FlatList
+          data={data.Trans}
+          keyExtractor={(item, index) => index.toString()}
+          onRefresh={() => fetchData(true)}
+          refreshing={loading}
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={() => (
+            <View style={styles.header}>
+              <View style={styles.headerRow}>
+                <View style={styles.headerLabelContainer}>
+                  <Icon name="file-document-outline" size={20} color="#333333" />
+                  <Text style={styles.headerLabel}>Invoice No:</Text>
+                </View>
+                <Text style={styles.headerValue}>{data.VocNo}</Text>
               </View>
-              <Text style={styles.headerValue}>{data.VocNo}</Text>
-            </View>
-            <View style={styles.headerRow}>
-              <View style={styles.headerLabelContainer}>
-                <Icon name="calendar" size={20} color="#333333" />
-                <Text style={styles.headerLabel}>Date:</Text>
-              </View>
-              <TextInput
-                style={styles.headerValue}
-                value={data.Date}
-                onChangeText={text =>
-                  setData(prevData => ({ ...prevData, Date: text }))
-                }
-                placeholder="YYYY-MM-DD"
-                keyboardType="default"
-                onFocus={() => setShowDatePicker(true)}
-              />
-              {showDatePicker && (
-                <DateTimePicker
-                  value={new Date(data.Date)}
-                  mode="date"
-                  display="default"
-                  onChange={handleDateChange}
-                  onClose={() => setShowDatePicker(false)}
+              <View style={styles.headerRow}>
+                <View style={styles.headerLabelContainer}>
+                  <Icon name="calendar" size={20} color="#333333" />
+                  <Text style={styles.headerLabel}>Date:</Text>
+                </View>
+                <TextInput
+                  style={styles.headerValue}
+                  value={data.Date}
+                  onChangeText={text =>
+                    setData(prevData => ({ ...prevData, Date: text }))
+                  }
+                  placeholder="YYYY-MM-DD"
+                  keyboardType="default"
+                  onFocus={() => setShowDatePicker(true)}
                 />
-              )}
-            </View>
-            <View style={styles.headerRow}>
-              <View style={styles.headerLabelContainer}>
-                <Icon name="table-furniture" size={20} color="#333333" />
-                <Text style={styles.headerLabel}>Table No:</Text>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={new Date(data.Date)}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                  />
+                )}
               </View>
-              <TextInput
-                style={styles.headerValue}
-                value={data.TblNo}
-                onChangeText={text =>
-                  setData(prevData => ({ ...prevData, TblNo: text }))
-                }
-                placeholder="Enter Table No"
-              />
-            </View>
-            <View style={styles.headerRow}>
-              <View style={styles.headerLabelContainer}>
-                <Icon name="credit-card-outline" size={20} color="#333333" />
-                <Text style={styles.headerLabel}>PType:</Text>
+              <View style={styles.headerRow}>
+                <View style={styles.headerLabelContainer}>
+                  <Icon name="table-furniture" size={20} color="#333333" />
+                  <Text style={styles.headerLabel}>Table No:</Text>
+                </View>
+                <TextInput
+                  style={styles.headerValue}
+                  value={data.TblNo}
+                  onChangeText={text =>
+                    setData(prevData => ({ ...prevData, TblNo: text }))
+                  }
+                  placeholder="Enter Table No"
+                />
               </View>
-              <Text style={styles.headerValue}>{data.PType}</Text>
-            </View>
-            <View style={styles.headerRow}></View>
-              <TouchableOpacity
+              <View style={styles.headerRow}>
+                <View style={styles.headerLabelContainer}>
+                  <Icon name="credit-card-outline" size={20} color="#333333" />
+                  <Text style={styles.headerLabel}>PType:</Text>
+                </View>
+                <Text style={styles.headerValue}>{data.PType}</Text>
+              </View>
+              {/* <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => {
                   setCurrentIndex(-1);
                     setShowModel(true);
-                  }}>
+                  }}
+                  >
                   <Icon name="plus" size={24} color="#fff" />
-                  <Text onPress={() => handleOpenModel(currentIndex)} style={styles.saveButton}>Add Products</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              renderItem={({ item, index }) => (
-                <View style={styles.item}>
-                <Text style={styles.productName} onPress={() => handleOpenModel(index)}>{item.ProdName}</Text>
-                <View style={styles.qtyContainer}>
-                  <TouchableOpacity
+                  <Text style={styles.saveButton}>Add Products</Text>
+                  </TouchableOpacity> */}
+            </View>
+          )}
+          renderItem={({ item, index }) => (
+            <View style={styles.item}>
+              {/* Product Name */}
+              <Text 
+                style={styles.productName} 
+                onPress={() => handleOpenModel(index)}
+              >
+                {item.ProdName}
+              </Text>
+          
+              {/* Quantity Control */}
+              <View style={styles.qtyContainer}>
+                {/* Minus Button */}
+                <TouchableOpacity
                   style={styles.qtyButton}
-                  onPress={() => handleQtyChange(index, -1)}>
+                  onPress={() => handleQtyChange(index, -1)}
+                >
                   <Icon name="minus" size={20} color="white" />
-                  </TouchableOpacity>
-                  <TextInput
+                </TouchableOpacity>
+          
+                {/* Quantity Input */}
+                <TextInput
                   style={styles.qtyInput}
                   onChangeText={text => handleCustomQtyChange(index, text)}
                   value={item.Qty.toString()}
                   keyboardType="numeric"
-                  />
-                  <TouchableOpacity
+                />
+          
+                {/* Plus Button */}
+                <TouchableOpacity
                   style={styles.qtyButton}
-                  onPress={() => handleQtyChange(index, 1)}>
+                  onPress={() => handleQtyChange(index, 1)} // Updated with increment logic
+                >
                   <Icon name="plus" size={20} color="white" />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.netAmount}>{Math.round(item.Rate) || "100"}</Text>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDelete(index)}>
-                  <Icon name="delete-outline" size={24} color="#fff" />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.customButton}
-                  onPress={() => handleOpenModel(index)}>
-                  <Icon name="tag-edit-outline" size={24} color="#fff" />
-                </TouchableOpacity>
-                </View>
-              )}
-              ListFooterComponent={() => {
-          const totalQty = data.Trans.reduce((sum, item) => sum + item.Qty, 0);
-          const totalNetAmount = data.Trans.reduce(
-            (sum, item) => sum + item.NetAmount,
-            0,
-          );
-          const serviceCharges = data.SCharges || 0;
-          const grandTotal = totalNetAmount + serviceCharges;
-
-          return (
-            <View style={styles.footer}>
-              <View style={styles.footerRow}>
-                <Text style={styles.footerLabel}>Total Quantity:</Text>
-                <Text style={styles.footerValue}>{totalQty}</Text>
               </View>
-              <View style={styles.footerRow}>
-                <Text style={styles.footerLabel}>Total Amount:</Text>
-                <Text style={styles.footerValue}>
-                  {totalNetAmount.toFixed(0)} PKR
-                </Text>
-              </View>
-              <View style={styles.footerRow}>
-                <Text style={styles.footerLabel}>Service Charges:</Text>
-                <Text style={styles.footerValue}>
-                  {serviceCharges.toFixed(0)} PKR
-                </Text>
-              </View>
-              <View style={styles.footerRow}>
-                <Text style={styles.footerLabel}>Grand Total:</Text>
-                <Text style={styles.footerValue}>
-                  {grandTotal.toFixed(0)} PKR
-                </Text>
-              </View>
+          
+              {/* Net Amount */}
+              <Text style={styles.netAmount}>
+                {Math.round(item.Rate) || "100"}
+              </Text>
+          
+              {/* Delete Button */}
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDelete(index)}
+              >
+                <Icon name="delete-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+          
+              {/* Edit Button */}
+              <TouchableOpacity
+                style={styles.customButton}
+                onPress={() => handleOpenModel(index)}
+              >
+                <Icon name="tag-edit-outline" size={24} color="#fff" />
+              </TouchableOpacity>
             </View>
-          );
-        }}
-      />
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Icon
-          name="content-save"
-          size={24}
-          color="white"
-          style={styles.saveButtonIcon}
+          )}
+          
+          ListFooterComponent={() => {
+            const totalQty = data.Trans.reduce((sum, item) => sum + item.Qty, 0);
+            const totalNetAmount = data.Trans.reduce(
+              (sum, item) => sum + item.NetAmount,
+              0
+            );
+            const serviceCharges = data.SCharges || 0;
+            const grandTotal = totalNetAmount + serviceCharges;
+
+            return (
+              <View style={styles.footer}>
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerLabel}>Total Quantity:</Text>
+                  <Text style={styles.footerValue}>{totalQty}</Text>
+                </View>
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerLabel}>Total Amount:</Text>
+                  <Text style={styles.footerValue}>
+                    {totalNetAmount.toFixed(0)} PKR
+                  </Text>
+                </View>
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerLabel}>Service Charges:</Text>
+                  <Text style={styles.footerValue}>
+                    {serviceCharges.toFixed(0)} PKR
+                  </Text>
+                </View>
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerLabel}>Grand Total:</Text>
+                  <Text style={styles.footerValue}>
+                    {grandTotal.toFixed(0)} PKR
+                  </Text>
+                </View>
+              </View>
+            );
+          }}
         />
-        <Text style={styles.saveButtonText}>Save</Text>
-      </TouchableOpacity>
-      {showModel && (
-        <View style={styles.modelContainer}>
-          <AllProducts handleSelectProduct={handleSelectProduct} />
-          <TouchableOpacity style={styles.closeButton} onPress={() => setShowModel(false)}>
-            {/* <Text style={styles.closeButtonText}>Close</Text> */}
-          </TouchableOpacity>
-        </View>
-      )}
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Icon name="content-save" size={24} color="white" />
+          <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
+        {showModel && (
+          <View style={styles.modelContainer}>
+            <AllProducts handleSelectProduct={handleSelectProduct} />
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowModel(false)} />
+          </View>
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -439,6 +468,7 @@ const styles = StyleSheet.create({
     height: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 2,
   },
   qtyInput: {
     borderWidth: 1,
@@ -455,6 +485,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'right',
     color: '#333333',
+    zIndex: 1
   },
   deleteButton: {
     padding: 5,
@@ -491,6 +522,9 @@ const styles = StyleSheet.create({
     margin: 15,
     color: 'white',
     borderRadius: 5,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
 
   },
   saveButtonIcon: {

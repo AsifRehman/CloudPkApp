@@ -44,6 +44,7 @@ function CustomDrawerContent(props) {
       <View style={{ flex: 1 }}>
         <DrawerItem label="Home" onPress={() => props.navigation.navigate('HomeStack')} />
         <DrawerItem label="Today Sales" onPress={() => props.navigation.navigate('TodaySales')} />
+        <DrawerItem label="All Products" onPress={() => props.navigation.navigate('AllProducts')} />
       </View>
 
       {/* Logout Button */}
