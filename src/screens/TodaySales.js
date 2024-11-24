@@ -80,6 +80,16 @@ const TodaySales = () => {
     fetchData(startDate, date);
   };
 
+  const totalSalesByType = data.reduce((acc, item) => {
+    if (!acc[item.PT]) {
+      acc[item.PT] = 0;
+    }
+    acc[item.PT] += item.NetAmount;
+    return acc;
+  }, {});
+
+  console.log(totalSalesByType);
+
   // useFocusEffect(
   //   useCallback(() => {
   //     const onBackPress = () => {
@@ -131,6 +141,17 @@ const TodaySales = () => {
                 )}
               </Text>
             </View>
+            <View style={styles.summaryContainer}>
+              <Text style={styles.summaryText}>
+                Total Sales by Type:{' '}
+                {Object.entries(totalSalesByType).map(([key, value]) => (
+                  <Text style={{color: "black"}} key={key}>
+                    {key}: {formatAmount(value)}{' '}
+                  </Text>
+                ))}
+              </Text>
+            </View>
+
             <View style={styles.tableHeader}>
               <Text style={styles.headerText}>Inv#.</Text>
               <Text style={styles.headerText}>Type</Text>
