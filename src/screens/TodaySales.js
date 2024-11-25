@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef, useCallback} from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,9 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from '@react-native-community/datetimepicker';
 import api from '../api';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {formatAmount} from '../utils/util';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { formatAmount } from '../utils/util';
 
 const TodaySales = () => {
   const [data, setData] = useState([]);
@@ -133,23 +133,28 @@ const TodaySales = () => {
                 </Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.summaryContainer}>
-              <Text style={styles.summaryText}>
+            <View >
+              <Text style={styles.summaryText} >
                 Total Sales:{' '}
                 {formatAmount(
                   data.reduce((sum, item) => sum + item.NetAmount, 0),
                 )}
               </Text>
             </View>
-            <View style={styles.summaryContainer}>
-              <Text style={styles.summaryText}>
-                Total Sales by Type:{' '}
+            <View style={styles.salesTyContainer}>
+              <Text style={styles.heading}>
+                Total Sales by Type:
+
+              </Text>
+              <View style={styles.saleWrapper}>
                 {Object.entries(totalSalesByType).map(([key, value]) => (
-                  <Text style={{color: "black"}} key={key}>
+                  <Text style={styles.salesText} key={key}>
                     {key}: {formatAmount(value)}{' '}
                   </Text>
                 ))}
-              </Text>
+
+             
+              </View>
             </View>
 
             <View style={styles.tableHeader}>
@@ -161,18 +166,18 @@ const TodaySales = () => {
             </View>
           </>
         }
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() =>
               navigation.navigate('HomeStack', {
                 screen: 'SaleDetails',
-                params: {vocNo: item.VocNo},
+                params: { vocNo: item.VocNo },
               })
             }>
             <Animated.View
               style={[
                 styles.item,
-                {opacity: fadeAnim, transform: [{translateY: slideAnim}]},
+                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
               ]}>
               <Text style={styles.cellText}>{item.VocNo}</Text>
               <Text style={styles.cellText}>{item.PT}</Text>
@@ -212,8 +217,14 @@ const TodaySales = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#ff3d00', paddingHorizontal: 10},
-  loader: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  container: {
+    flex: 1,
+    backgroundColor: '#ff3d00',
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'black',
+  },
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   heading: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -236,12 +247,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
-  dateButtonText: {color: '#ff3d00', fontSize: 16, fontWeight: 'bold'},
+  dateButtonText: { color: '#ff3d00', fontSize: 16, fontWeight: 'bold' },
   tableHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -267,25 +278,59 @@ const styles = StyleSheet.create({
     borderColor: 'lightgrey',
     backgroundColor: 'white',
   },
-  cellText: {fontSize: 16, flex: 1, textAlign: 'center', color: '#333'},
-  cellTextSmall: {fontSize: 12, flex: 1, textAlign: 'center', color: '#333'},
-  cellTextRight: {fontSize: 16, flex: 1, textAlign: 'right', color: '#333'},
-  summaryContainer: {
-    padding: 10,
-    backgroundColor: '#f222f',
+  cellText: { fontSize: 16, flex: 1, textAlign: 'center', color: '#333' },
+  cellTextSmall: { fontSize: 12, flex: 1, textAlign: 'center', color: '#333' },
+  cellTextRight: { fontSize: 16, flex: 1, textAlign: 'right', color: '#333' },
+  summaryText: {
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
     borderRadius: 10,
-    marginVertical: 10,
-    shadowColor: '#333',
-    shadowOffset: {width: 0, height: 2},
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
-  },
-  summaryText: {
-    fontSize: 18,
-    fontWeight: 'bold',
     textAlign: 'center',
-    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ff3d00',
+  },
+  salesTyContainer: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ff3d00',
+    gap: 3,
+    marginBottom: 10,
+    padding: 2,
+  },
+  saleWrapper: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10, 
+  },
+  salesText: {
+    // flex: 1,
+    width:"45%",
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    // marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ff3d00',
   },
 });
 
