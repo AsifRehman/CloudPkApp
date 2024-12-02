@@ -1,29 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, RefreshControl, Alert } from 'react-native';
 import api from '../api';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { AppContext } from '../AppContext';
 
 const AllProdTypes = ({handleSelectProduct}) => {
+    const appContext = useContext(AppContext)
 
     const navigation = useNavigation();
 
     const route = useRoute();
     const { vocNo } = route.params || {};
-    const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
+    const {prodTypes, setProdTypes} = appContext
+    const [filteredProdTypes, setFilteredProdTypes] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
 
-    const fetchProducts = async () => {
+    const fetchprodTypes = async () => {        
         try {
+
+            if (prodTypes?.length > 0) {
+                setLoading(false)
+                return;
+            }
+    
             const response = await api.get('/prodtype');
             console.log('ProdTypes:', response.data);
-            setProducts(response.data);
-            setFilteredProducts(response.data); // Initialize with all products
+            setProdTypes(response.data);
+            setFilteredProdTypes(response.data); // Initialize with all prodTypes
         } catch (error) {
-            console.log('Error fetching products:', error);
+            console.log('Error fetching prodTypes:', error);
         } finally {
             setLoading(false);
             setRefreshing(false); // Stop refreshing after fetching data
@@ -31,27 +39,27 @@ const AllProdTypes = ({handleSelectProduct}) => {
     };
 
     useEffect(() => {
-        fetchProducts();
+        fetchprodTypes();
 
     }, []);
 
     const handleSearch = (text) => {
         setSearchQuery(text);
 
-        const filtered = products.filter(item => {
-            const productName = item.ProdTypeName ? item.ProdType.toLowerCase() : '';
+        const filtered = prodTypes.filter(item => {
+            const productType = item.ProdType ? item.ProdType.toLowerCase() : '';
             const ProdTypeId = item.ProdTypeId ? item.ProdTypeId.toString() : '';
             const query = text.toLowerCase();
 
-            return productName.includes(query) || ProdTypeId.includes(query);
+            return productType.includes(query) || ProdTypeId.includes(query);
         });
 
-        setFilteredProducts(filtered);
+        setFilteredProdTypes(filtered);
     };
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchProducts(); // Re-fetch products on pull-to-refresh
+        fetchprodTypes(); // Re-fetch prodTypes on pull-to-refresh
     };
     const handleSelectedProduct = (ProdTypeId, ProdType) => {
         handleSelectProduct(ProdTypeId, ProdType);
@@ -65,12 +73,12 @@ const AllProdTypes = ({handleSelectProduct}) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.heading}>All Products</Text>
+            <Text style={styles.heading}>All prodTypes</Text>
 
             {/* Search Bar */}
             <TextInput
                 style={styles.searchBar}
-                placeholder="Search by product name or ID"
+                placeholder="Search by product type or ID"
                 value={searchQuery}
                 onChangeText={handleSearch}
                 placeholderTextColor={'#ff3d00'}
@@ -78,7 +86,7 @@ const AllProdTypes = ({handleSelectProduct}) => {
 
             {/* Product List */}
             <FlatList
-                data={filteredProducts}
+                data={filteredProdTypes}
                 keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -86,7 +94,7 @@ const AllProdTypes = ({handleSelectProduct}) => {
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         style={styles.productItem}
-                        onPress={() => navigation.navigate('AllProducts', { ProdTypeId: item.ProdTypeId })}
+                        onPress={() => navigation.navigate('AllprodTypes', { ProdTypeId: item.ProdTypeId })}
                     >
                         <Text style={styles.productName}>{item.ProdTypeId || 'No id'} {item.ProdTypeName || 'No Name'}</Text>
                     </TouchableOpacity>

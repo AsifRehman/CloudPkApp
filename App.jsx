@@ -15,6 +15,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import BlueScreen from './src/screens/BlueScreen';
 import AllProducts from './src/screens/AllProducts';
 import AllProdTypes from './src/screens/AllProdTypes';
+import { AppContext } from './src/AppContext';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -95,20 +96,25 @@ function App() {
     checkToken();
   }, []);
 
+  const [products, setProducts] = useState([]);
+  const [prodTypes, setProdTypes] = useState([]);
+
   if (initialRoute === null) return null; // Show loading screen or return null until route is set
 
   return (
-    <NavigationContainer>
-      <Drawer.Navigator
-        initialRouteName={initialRoute}
-        screenOptions={{ headerShown: false }}
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-      >
-        <Drawer.Screen name="Login" component={LoginScreen} options={{ headerTitle: '' }} />
-        <Drawer.Screen name="HomeStack" component={HomeStack} options={{ title: 'Home' }} />
-        <Drawer.Screen name="Today Sales" component={TodaySales} options={{title: "Sales"}} />
-      </Drawer.Navigator>
-    </NavigationContainer>
+    <AppContext.Provider value={{ products, setProducts, prodTypes, setProdTypes }}>
+      <NavigationContainer>
+        <Drawer.Navigator
+          initialRouteName={initialRoute}
+          screenOptions={{ headerShown: false }}
+          drawerContent={(props) => <CustomDrawerContent {...props} />}
+        >
+          <Drawer.Screen name="Login" component={LoginScreen} options={{ headerTitle: '' }} />
+          <Drawer.Screen name="HomeStack" component={HomeStack} options={{ title: 'Home' }} />
+          <Drawer.Screen name="Today Sales" component={TodaySales} options={{ title: "Sales" }} />
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </AppContext.Provider>
   );
 }
 

@@ -1,28 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, RefreshControl, Alert } from 'react-native';
 import api from '../api';
 import { useRoute } from '@react-navigation/native';
+import { AppContext } from '../AppContext';
 
 const AllProducts = ({handleSelectProduct}) => {
+    const appContext = useContext(AppContext);
+    const {products, setProducts} = appContext
     const route = useRoute();
-    const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-    const { ProdTypeId } = route.params;
+    const { ProdTypeId = 0 } = route.params || {};
+
+    
+
     useEffect(() => {
         if (ProdTypeId) {
             const filtered = products.filter(product => product.ProdTypeId === ProdTypeId);
             setFilteredProducts(filtered);
         }
+        else
+            setFilteredProducts(products)
     }, [ProdTypeId, products]);
     const fetchProducts = async () => {
+        setLoading(true)
+        if (products?.length > 0) {
+            setLoading(false)
+            return;
+        }
         try {
             const response = await api.get('/product');
             console.log('Products:', response.data);
             setProducts(response.data);
             setFilteredProducts(response.data); // Initialize with all products
+            setLoading(false)
         } catch (error) {
             console.log('Error fetching products:', error);
         } finally {
@@ -32,6 +45,7 @@ const AllProducts = ({handleSelectProduct}) => {
     };
 
     useEffect(() => {
+        console.log('Use Effect')
         fetchProducts();
 
     }, []);
@@ -39,7 +53,7 @@ const AllProducts = ({handleSelectProduct}) => {
     const handleSearch = (text) => {
         setSearchQuery(text);
 
-        const filtered = products.filter(item => {
+        const filtered = products?.filter(item => {
             const productName = item.ProdName ? item.ProdName.toLowerCase() : '';
             const productId = item.ProductId ? item.ProductId.toString() : '';
             const query = text.toLowerCase();
