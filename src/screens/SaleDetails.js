@@ -47,7 +47,7 @@ export default function SaleDetails() {
         (acc, curr) => acc + curr.NetAmount,
         0,
       );
-      const serviceCharges = Math.round(totalNetAmount * 0.07);
+      const serviceCharges = Math.round(totalNetAmount * 0.09);
       setData(prevData => ({ ...prevData, SCharges: serviceCharges }));
     } else {
       setData(prevData => ({ ...prevData, SCharges: 0 }));
@@ -126,7 +126,7 @@ export default function SaleDetails() {
       (acc, curr) => acc + curr.NetAmount,
       0,
     );
-    const serviceCharges = totalNetAmount * 0.07;
+    const serviceCharges = totalNetAmount * 0.09;
     setData(prevData => ({
       ...prevData,
       Trans: updatedData,
