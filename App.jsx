@@ -16,6 +16,7 @@ import BlueScreen from './src/screens/BlueScreen';
 import AllProducts from './src/screens/AllProducts';
 import AllProdTypes from './src/screens/AllProdTypes';
 import { AppContext } from './src/AppContext';
+import SalesSummary from './src/screens/SalesSummary';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -25,6 +26,7 @@ function HomeStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="TodaySales" component={TodaySales} />
+      <Stack.Screen name="SalesSummary" component={SalesSummary} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Blue" component={BlueScreen} />
       <Stack.Screen name="AllProducts" component={AllProducts} />
@@ -47,6 +49,7 @@ function CustomDrawerContent(props) {
       <View style={{ flex: 1 }}>
         <DrawerItem label="Home" onPress={() => props.navigation.navigate('HomeStack')} />
         <DrawerItem label="Today Sales" onPress={() => props.navigation.navigate('TodaySales')} />
+        <DrawerItem label="Sales Summary" onPress={() => props.navigation.navigate('SalesSummary')} />
         <DrawerItem label="All Products" onPress={() => props.navigation.navigate('AllProducts')} />
         <DrawerItem label="All ProdTypes" onPress={() => props.navigation.navigate('AllProdTypes')} />
       </View>
@@ -112,6 +115,7 @@ function App() {
           <Drawer.Screen name="Login" component={LoginScreen} options={{ headerTitle: '' }} />
           <Drawer.Screen name="HomeStack" component={HomeStack} options={{ title: 'Home' }} />
           <Drawer.Screen name="Today Sales" component={TodaySales} options={{ title: "Sales" }} />
+          <Drawer.Screen name="Sales Summary" component={SalesSummary} options={{ title: "Sales Summary" }} />
         </Drawer.Navigator>
       </NavigationContainer>
     </AppContext.Provider>

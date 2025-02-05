@@ -1,25 +1,21 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  SectionList,
   StyleSheet,
   ActivityIndicator,
   Animated,
   RefreshControl,
   TouchableOpacity,
-  BackHandler,
-  Platform,
 } from 'react-native';
-import DateTimePicker, {
-  DateTimePickerAndroid,
-} from '@react-native-community/datetimepicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { formatAmount } from '../utils/util';
 
-const TodaySales = () => {
+const SalesSummary = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,7 +33,7 @@ const TodaySales = () => {
       const formattedStartDate = sDate.toISOString().split('T')[0];
       const formattedEndDate = eDate.toISOString().split('T')[0];
       const response = await api.get(
-        `/stk/salsum?sdate=${formattedStartDate}&edate=${formattedEndDate}&orderby=VocNo`,
+        `/stk/salsum?sdate=${formattedStartDate}&edate=${formattedEndDate}&orderby=prodname`,
       );
       setData(response?.data?.table || []);
     } catch (error) {
@@ -64,6 +60,25 @@ const TodaySales = () => {
     fetchData();
   }, []);
 
+  const sections = useMemo(() => {
+    const grouped = data.reduce((acc, item) => {
+      const existingGroup = acc.find(g => g.ProdTypeId === item.ProdTypeId);
+      if (existingGroup) {
+        existingGroup.data.push(item);
+        existingGroup.total += item.NetAmt;
+      } else {
+        acc.push({
+          ProdTypeId: item.ProdTypeId,
+          title: item.ProdType,
+          data: [item],
+          total: item.NetAmt,
+        });
+      }
+      return acc;
+    }, []);
+    return grouped;
+  }, [data]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchData();
@@ -71,7 +86,7 @@ const TodaySales = () => {
 
   const handleStartDateChange = (_, date) => {
     setStartDate(date);
-    setEndDate(date)
+    setEndDate(date);
     fetchData(date, date);
   };
 
@@ -84,23 +99,9 @@ const TodaySales = () => {
     if (!acc[item.PT]) {
       acc[item.PT] = 0;
     }
-    acc[item.PT] += item.NetAmount;
+    acc[item.PT] += item.NetAmt;
     return acc;
   }, {});
-
-  console.log(totalSalesByType);
-
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     const onBackPress = () => {
-  //       navigation.navigate('Home');
-  //       return true;
-  //     };
-  //     BackHandler.addEventListener('hardwareBackPress', onBackPress);
-  //     return () =>
-  //       BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-  //   }, [navigation]),
-  // );
 
   if (loading) {
     return <ActivityIndicator size="large" style={styles.loader} />;
@@ -108,15 +109,15 @@ const TodaySales = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
-        data={data}
+      <SectionList
+        sections={sections}
         keyExtractor={(item, index) => index.toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListHeaderComponent={
           <>
-            <Text style={styles.heading}>Today Sales</Text>
+            <Text style={styles.heading}>Sales Summary</Text>
             <View style={styles.dateContainer}>
               <TouchableOpacity
                 style={styles.dateButton}
@@ -133,39 +134,37 @@ const TodaySales = () => {
                 </Text>
               </TouchableOpacity>
             </View>
-            <View >
-              <Text style={styles.summaryText} >
+            <View>
+              <Text style={styles.summaryText}>
                 Total Sales:{' '}
                 {formatAmount(
-                  data.reduce((sum, item) => sum + item.NetAmount, 0),
+                  data.reduce((sum, item) => sum + item.NetAmt, 0),
                 )}
               </Text>
             </View>
             <View style={styles.salesTyContainer}>
-              <Text style={styles.heading}>
-                Total Sales by Type:
-
-              </Text>
+              <Text style={styles.heading}>Total Sales by Type:</Text>
               <View style={styles.saleWrapper}>
                 {Object.entries(totalSalesByType).map(([key, value]) => (
                   <Text style={styles.salesText} key={key}>
                     {key}: {formatAmount(value)}{' '}
                   </Text>
                 ))}
-
-             
               </View>
             </View>
-
             <View style={styles.tableHeader}>
-              <Text style={styles.headerText}>Inv#.</Text>
+              <Text style={styles.headerTextProd}>Prods</Text>
               <Text style={styles.headerText}>Type</Text>
-              <Text style={styles.headerText}>Tbl.No</Text>
-              <Text style={styles.headerText}>Prods</Text>
+              <Text style={styles.headerText}>Qty</Text>
               <Text style={styles.headerText}>Amt</Text>
             </View>
           </>
         }
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{section.title}</Text>
+          </View>
+        )}
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() =>
@@ -179,15 +178,21 @@ const TodaySales = () => {
                 styles.item,
                 { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
               ]}>
-              <Text style={styles.cellText}>{item.VocNo}</Text>
+              <Text style={styles.cellTextProd}>{item.ProdName}</Text>
               <Text style={styles.cellText}>{item.PT}</Text>
-              <Text style={styles.cellText}>{item.TblNo}</Text>
-              <Text style={styles.cellTextSmall}>{item.CntProds} Prod(s)</Text>
+              <Text style={styles.cellText}>{item.Qty}</Text>
               <Text style={styles.cellTextRight}>
-                {formatAmount(item.NetAmount)}
+                {formatAmount(item.NetAmt)}
               </Text>
             </Animated.View>
           </TouchableOpacity>
+        )}
+        renderSectionFooter={({ section }) => (
+          <View style={styles.sectionFooter}>
+            <Text style={styles.footerText}>
+              Total: {formatAmount(section.total)}
+            </Text>
+          </View>
         )}
       />
       {showStart && (
@@ -262,6 +267,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: 'lightgrey',
   },
+  headerTextProd: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ff3d00',
+    flex: 3,
+    textAlign: 'center',
+  },
   headerText: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -278,8 +290,8 @@ const styles = StyleSheet.create({
     borderColor: 'lightgrey',
     backgroundColor: 'white',
   },
+  cellTextProd: { fontSize: 16, flex: 3, textAlign: 'center', color: '#333' },
   cellText: { fontSize: 16, flex: 1, textAlign: 'center', color: '#333' },
-  cellTextSmall: { fontSize: 12, flex: 1, textAlign: 'center', color: '#333' },
   cellTextRight: { fontSize: 16, flex: 1, textAlign: 'right', color: '#333' },
   summaryText: {
     backgroundColor: '#fff',
@@ -298,7 +310,6 @@ const styles = StyleSheet.create({
   },
   salesTyContainer: {
     flex: 1,
-    display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
@@ -308,20 +319,17 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   saleWrapper: {
-    display: 'flex',
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 10, 
+    gap: 10,
   },
   salesText: {
-    // flex: 1,
-    width:"45%",
+    width: "45%",
     backgroundColor: '#fff',
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 10,
-    // marginHorizontal: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -332,6 +340,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ff3d00',
   },
+  sectionHeader: {
+    backgroundColor: '#e0e0e0',
+    padding: 10,
+  },
+  sectionHeaderText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ff3d00',
+  },
+  sectionFooter: {
+    backgroundColor: '#f5f5f5',
+    padding: 10,
+    alignItems: 'flex-end',
+  },
+  footerText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ff3d00',
+  },
 });
 
-export default TodaySales;
+export default SalesSummary;
