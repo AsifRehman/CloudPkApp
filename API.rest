@@ -1,0 +1,174 @@
+POST http://localhost:5103/api/login/GetUserTmpCode
+content-type: application/json
+
+{
+    "UserName": "admin",
+    "Pwd": "2211121212",
+    "CompanyEmail": "khayam@cloudpkerp.com",
+    "ip": "103.55.70.106",
+    "CompanyId": 11
+}
+
+###
+
+GET http://localhost:5103/api/stk/salsum?sdate=2025-03-21&edate=2025-03-24&orderby=VocNo
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiYWRtaW4iLCJDb21wYW55SWQiOiIxNCIsIm5iZiI6MTc0MzMzNDYyOCwiZXhwIjoxNzQzMzc3ODI4LCJpYXQiOjE3NDMzMzQ2Mjh9.TyNgGcjtzbAnGsKVNq6TWpqXXzoIeu448P2gPRyPujc
+CompanyId: 14
+
+###
+
+POST http://localhost:5103/api/wv1/wgtrans
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiYWRtaW4iLCJDb21wYW55SWQiOiIxMSIsIm5iZiI6MTczMjk1MzE0NSwiZXhwIjoxNzMyOTk2MzQ1LCJpYXQiOjE3MzI5NTMxNDV9.bOipQ_JMrpWHIhnS5R8yhpEUqQ59Bu_xmQvzeJzXuJE
+CompanyId: 11
+content-type: application/json
+
+{
+    "TType": "wgt",
+    "VocNo": 0,
+    "Date": "2024-11-30",
+    "PartyId": 321040001,
+    "PartyName": "GREIGE TRANSFER ADJUSTMENTS",
+    "Remarks": null,
+    "Status": 0,
+    "TransOut": [
+        {
+            "RefId": 3207,
+            "SrNo": 1,
+            "Serial": null,
+            "LotNo": "12948",
+            "RefType": "WGW",
+            "ProductId": 201031,
+            "ProdName": "64 X 48 / 36 X 26 ARSH GOLD 43\"",
+            "Width": null,
+            "Than": 47,
+            "GrossMtr": 6052,
+            "LShort": null,
+            "Short": null,
+            "Rej": null,
+            "NetMtr": null,
+            "Rate": 77.762392,
+            "Amount": 0,
+            "CostRate": 77.762392,
+            "GradeId": 1,
+            "GradeName": "A",
+            "GodownId": 242030001,
+            "GodownName": "GODOWN MACHLI FARM (GREIGE STOCK) ",
+            "IsDeleted": 0
+        }
+    ],
+    "TransIn": [
+        {
+            "Id": 0,
+            "SrNo": 1,
+            "Serial": null,
+            "LotNo": "1111",
+            "ProductId": 205057,
+            "ProdName": "\t62 x 54 / 36 x 36 FABRON R 40\"  (205057)",
+            "Width": 40,
+            "Than": "1",
+            "GrossMtr": "12121",
+            "LShort": null,
+            "Short": null,
+            "Rej": null,
+            "NetMtr": 12121,
+            "Rate": "11",
+            "Amount": 0,
+            "ToPartyId": 241010017,
+            "ToPartyName": "\tDO OF BILAL QASOORI",
+            "GradeId": 1,
+            "GradeName": "A",
+            "IsDeleted": 0,
+            "Unit": "",
+            "Reed": 62,
+            "Pick": 54,
+            "Warp": 36,
+            "Weft": 36,
+            "Kin": 3.5,
+            "Adj": null,
+            "WarpEnds": 2620,
+            "PWarpEnds": 2620
+        }
+    ]
+}
+
+###
+
+PUT http://localhost:5103/api/wv/wgtrans/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiYWRtaW4iLCJDb21wYW55SWQiOiIxMSIsIm5iZiI6MTczMjk1MjcwNywiZXhwIjoxNzMyOTk1OTA3LCJpYXQiOjE3MzI5NTI3MDd9.YIvmCKAxuC0KssbDG1vF6StxTzQWShnXxPVqy7Uptjo
+CompanyId: 11
+content-type: application/json
+
+{
+    "TType": "wgt",
+    "VocNo": 1,
+    "Date": "2024-11-28",
+    "PartyId": 321040001,
+    "PartyName": "GREIGE TRANSFER ADJUSTMENTS",
+    "Remarks": null,
+    "Status": 0,
+    "Trans": [],
+    "TransOut": [
+        {
+            "RefId": 3240,
+            "SrNo": 1,
+            "Serial": null,
+            "LotNo": "12973",
+            "RefType": "WGW",
+            "ProductId": 201031,
+            "ProdName": "64 X 48 / 36 X 26 ARSH GOLD 43\"",
+            "Width": null,
+            "Than": 35,
+            "GrossMtr": 4022,
+            "LShort": null,
+            "Short": null,
+            "Rej": null,
+            "NetMtr": null,
+            "Rate": 77.955494,
+            "Amount": 0,
+            "CostRate": 77.955494,
+            "GradeId": 1,
+            "GradeName": "A",
+            "ComPer": null,
+            "GodownId": 242030001,
+            "GodownName": "GODOWN MACHLI FARM (GREIGE STOCK) ",
+            "ToPartyId": null,
+            "ToPartyName": "",
+            "IsDeleted": 0
+        }
+    ],
+    "TransIn": [
+        {
+            "Id": 0,
+            "SrNo": 1,
+            "Serial": null,
+            "LotNo": "12010",
+            "ProductId": 205058,
+            "ProdName": "\t64 X 56 / 36 X 20 FABRON 40\"  (205058)",
+            "Width": 40,
+            "Than": "1",
+            "GrossMtr": "1200",
+            "LShort": null,
+            "Short": null,
+            "Rej": null,
+            "NetMtr": 1200,
+            "Rate": "470",
+            "Amount": null,
+            "ComPer": null,
+            "ComAmt": null,
+            "ToPartyId": 242030001,
+            "ToPartyName": "GODOWN MACHLI FARM (GREIGE STOCK) ",
+            "GradeId": 1,
+            "GradeName": "A",
+            "IsDeleted": 0,
+            "Unit": "",
+            "Reed": 64,
+            "Pick": 56,
+            "Warp": 36,
+            "Weft": 20,
+            "Kin": 3.5,
+            "Adj": null,
+            "WarpEnds": 2700,
+            "PWarpEnds": 2700
+        }
+    ]
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,40 @@ import {
   Animated,
   RefreshControl,
   TouchableOpacity,
-  BackHandler,
   Platform,
 } from 'react-native';
 import DateTimePicker, {
-  DateTimePickerAndroid,
 } from '@react-native-community/datetimepicker';
 import api from '../api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { formatAmount } from '../utils/util';
+
+// Memoized SaleItem component for better list performance
+const SaleItem = React.memo(({ item, navigation, fadeAnim, slideAnim }) => (
+  <TouchableOpacity
+    onPress={() =>
+      navigation.navigate('HomeStack', {
+        screen: 'SaleDetails',
+        params: { vocNo: item.VocNo },
+      })
+    }>
+    <Animated.View
+      style={[
+        styles.item,
+        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+      ]}>
+      <Text style={styles.cellText}>{item.Time}</Text>
+      <Text style={styles.cellText}>{item.VocNo}</Text>
+      <Text style={styles.cellText}>{item.PT}</Text>
+      <Text style={styles.cellText}>{item.TblNo}</Text>
+      <Text style={styles.cellTextSmall}>{item.CntProds} Prod(s)</Text>
+      <Text style={styles.cellTextRight}>
+        {formatAmount(item.NetAmount)}
+      </Text>
+    </Animated.View>
+  </TouchableOpacity>
+));
 
 const TodaySales = () => {
   const [data, setData] = useState([]);
@@ -32,10 +56,11 @@ const TodaySales = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(100)).current;
 
-  const fetchData = async (sDate = startDate, eDate = endDate) => {
+  const fetchData = useCallback(async (sDate = startDate, eDate = endDate) => {
     try {
       const formattedStartDate = sDate.toISOString().split('T')[0];
       const formattedEndDate = eDate.toISOString().split('T')[0];
+      setLoading(true);
       const response = await api.get(
         `/stk/salsum?sdate=${formattedStartDate}&edate=${formattedEndDate}&orderby=VocNo`,
       );
@@ -46,7 +71,7 @@ const TodaySales = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [startDate, endDate]);
 
   useEffect(() => {
     Animated.parallel([
@@ -62,45 +87,108 @@ const TodaySales = () => {
       }),
     ]).start();
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
-  };
+  }, [fetchData]);
 
-  const handleStartDateChange = (_, date) => {
-    setStartDate(date);
-    setEndDate(date)
-    fetchData(date, date);
-  };
+  const handleStartDateChange = useCallback((_, date) => {
+    if (date) {
+      setStartDate(date);
+      setEndDate(date);
+      fetchData(date, date);
+    }
+    setShowStart(false);
+  }, [fetchData]);
 
-  const handleEndDateChange = (_, date) => {
-    setEndDate(date);
-    fetchData(startDate, date);
-  };
+  const handleEndDateChange = useCallback((_, date) => {
+    if (date) {
+      setEndDate(date);
+      fetchData(startDate, date);
+    }
+    setShowEnd(false);
+  }, [fetchData, startDate]);
 
-  const totalSalesByType = data.reduce((acc, item) => {
+  // Memoized calculations to prevent unnecessary recalculations
+  const totalSalesByType = useMemo(() => data.reduce((acc, item) => {
     if (!acc[item.PT]) {
       acc[item.PT] = 0;
     }
     acc[item.PT] += item.NetAmount;
     return acc;
-  }, {});
+  }, {}), [data]);
 
-  console.log(totalSalesByType);
+  const totalSales = useMemo(() => data.reduce(
+    (sum, item) => sum + item.NetAmount, 0
+  ), [data]);
 
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     const onBackPress = () => {
-  //       navigation.navigate('Home');
-  //       return true;
-  //     };
-  //     BackHandler.addEventListener('hardwareBackPress', onBackPress);
-  //     return () =>
-  //       BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-  //   }, [navigation]),
-  // );
+  // Memoized renderItem function
+  const renderItem = useCallback(({ item }) => (
+    <SaleItem 
+      item={item} 
+      navigation={navigation} 
+      fadeAnim={fadeAnim} 
+      slideAnim={slideAnim} 
+    />
+  ), [navigation, fadeAnim, slideAnim]);
+
+  // Memoized list header component
+  const ListHeader = useCallback(() => (
+    <>
+      <Text style={styles.heading}>Today Sales</Text>
+      <View style={styles.dateContainer}>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowStart(true)}>
+          <Text style={styles.dateButtonText}>
+            {startDate.toDateString()}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowEnd(true)}>
+          <Text style={styles.dateButtonText}>
+            {endDate.toDateString()}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View>
+        <Text style={styles.summaryText}>
+          Total Sales: {formatAmount(totalSales)}
+        </Text>
+      </View>
+      <View style={styles.salesTyContainer}>
+        <Text style={styles.heading}>
+          Total Sales by Type:
+        </Text>
+        <View style={styles.saleWrapper}>
+          {Object.entries(totalSalesByType).map(([key, value]) => (
+            <Text style={styles.salesText} key={key}>
+              {key}: {formatAmount(value)}
+            </Text>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.tableHeader}>
+        <Text style={styles.headerText}>Time.</Text>
+        <Text style={styles.headerText}>Inv#.</Text>
+        <Text style={styles.headerText}>Type</Text>
+        <Text style={styles.headerText}>Tbl</Text>
+        <Text style={styles.headerText}>Prods</Text>
+        <Text style={styles.headerText}>Amt</Text>
+      </View>
+    </>
+  ), [startDate, endDate, totalSales, totalSalesByType]);
+
+  // Optimized getItemLayout for FlatList
+  const getItemLayout = useCallback((_, index) => ({
+    length: 50, // Approximate height of your item
+    offset: 50 * index,
+    index,
+  }), []);
 
   if (loading) {
     return <ActivityIndicator size="large" style={styles.loader} />;
@@ -114,91 +202,20 @@ const TodaySales = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        ListHeaderComponent={
-          <>
-            <Text style={styles.heading}>Today Sales</Text>
-            <View style={styles.dateContainer}>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowStart(true)}>
-                <Text style={styles.dateButtonText}>
-                  {startDate.toDateString()}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowEnd(true)}>
-                <Text style={styles.dateButtonText}>
-                  {endDate.toDateString()}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View >
-              <Text style={styles.summaryText} >
-                Total Sales:{' '}
-                {formatAmount(
-                  data.reduce((sum, item) => sum + item.NetAmount, 0),
-                )}
-              </Text>
-            </View>
-            <View style={styles.salesTyContainer}>
-              <Text style={styles.heading}>
-                Total Sales by Type:
-
-              </Text>
-              <View style={styles.saleWrapper}>
-                {Object.entries(totalSalesByType).map(([key, value]) => (
-                  <Text style={styles.salesText} key={key}>
-                    {key}: {formatAmount(value)}{' '}
-                  </Text>
-                ))}
-
-             
-              </View>
-            </View>
-
-            <View style={styles.tableHeader}>
-              <Text style={styles.headerText}>Inv#.</Text>
-              <Text style={styles.headerText}>Type</Text>
-              <Text style={styles.headerText}>Tbl.No</Text>
-              <Text style={styles.headerText}>Prods</Text>
-              <Text style={styles.headerText}>Amt</Text>
-            </View>
-          </>
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate('HomeStack', {
-                screen: 'SaleDetails',
-                params: { vocNo: item.VocNo },
-              })
-            }>
-            <Animated.View
-              style={[
-                styles.item,
-                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-              ]}>
-              <Text style={styles.cellText}>{item.VocNo}</Text>
-              <Text style={styles.cellText}>{item.PT}</Text>
-              <Text style={styles.cellText}>{item.TblNo}</Text>
-              <Text style={styles.cellTextSmall}>{item.CntProds} Prod(s)</Text>
-              <Text style={styles.cellTextRight}>
-                {formatAmount(item.NetAmount)}
-              </Text>
-            </Animated.View>
-          </TouchableOpacity>
-        )}
+        ListHeaderComponent={ListHeader}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        initialNumToRender={8}
+        removeClippedSubviews={Platform.OS === 'android'}
       />
       {showStart && (
         <DateTimePicker
           value={startDate}
           mode="date"
           display="default"
-          onChange={(event, date) => {
-            setShowStart(false);
-            handleStartDateChange(event, date);
-          }}
+          onChange={handleStartDateChange}
         />
       )}
       {showEnd && (
@@ -206,10 +223,7 @@ const TodaySales = () => {
           value={endDate}
           mode="date"
           display="default"
-          onChange={(event, date) => {
-            setShowEnd(false);
-            handleEndDateChange(event, date);
-          }}
+          onChange={handleEndDateChange}
         />
       )}
     </SafeAreaView>
@@ -315,13 +329,11 @@ const styles = StyleSheet.create({
     gap: 10, 
   },
   salesText: {
-    // flex: 1,
     width:"45%",
     backgroundColor: '#fff',
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 10,
-    // marginHorizontal: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
